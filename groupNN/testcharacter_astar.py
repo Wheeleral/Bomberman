@@ -8,12 +8,11 @@ from math import sqrt
 import heapq
 import random
 
-
-class TestCharacter(CharacterEntity):
-    			
+class AStarTestCharacter(CharacterEntity):			
     pathV = 0
     directions = []
     i = 1
+
     def do(self, wrld):
     	start = (self.dx, self.dy)
     	exit = wrld.exitcell
@@ -92,15 +91,19 @@ def heuristic(p1, p2):
 def AStar(start, end, gridCells, width, cost):  
     #set up frontier nodes using a min heap
     frontier = []
+    #startNode = Node(None, start, 0, manhattan(start, end)) 
     startNode = Node(None, start, 0, manhattan(start, end)) 
     # puts items into min heap
     heapq.heappush(frontier, (startNode.f,  random.randint(1,1001)*random.randint(1,1001),  startNode))  
+    #heapq.heappush(frontier, (startNode.f, startNode))  
+
     visited = {}
     
     while (len(frontier) > 0):  # if no solution, exit the while loop
         # The current node is the shortest distance
         cur = heapq.heappop(frontier) 
         cur = cur[2]
+        #cur = cur[1]
         # don't pursue paths that have already been searched
         if (cur.pos in visited):  
             continue
@@ -112,12 +115,13 @@ def AStar(start, end, gridCells, width, cost):
             i = 0
             if (neighbor != None):
                 heapq.heappush(frontier, (neighbor.f,  random.randint(1,1001)*random.randint(1,1001) , neighbor))  # put the neighbor into the min heap
+                #heapq.heappush(frontier, (neighbor.f, neighbor))  # put the neighbor into the min heap
+
             i+=1
         visited[cur.pos] = cur  
 
     print("YOU FAILED")
     return (None, None, None)
-
 
 """Takes last node taken in from A* (Final) and the dictionary of visited nodes, 
 and returns the path from start to end """
