@@ -12,9 +12,105 @@ class TestCharacter(CharacterEntity):
     pathV = 0
     directions = []
     i = 1
+    max_depth = 4 # need to figure out how to set this
+    #alpha = -math.inf
+    #beta = math.inf
 
     def do(self, wrld):
     	pass
+
+    """terminal test checks if state is max depth"""
+    # might need to add more to this
+    def terminal_test(self, depth):
+        if depth >= self.max_depth:
+            return True
+
+        return False
+
+    """returns a utility value"""
+    def max_value(self, state, depth):
+        if self.terminal_test(depth):
+            return self.score_state(state)  # need to write this function
+        
+        v = -math.inf
+        for action in self.get_successors(state):  # need to write this function
+            v = max(v, self.exp_value(action[0], action[1], depth + 1))
+            """if v >= self.beta:  
+                return v
+            
+            self.alpha = max(self.alpha, v)"""
+        
+        return v
+
+    """returns a utility value"""
+    def exp_value(self, state, depth):
+        if self.terminal_test(depth):
+            return self.score_state(state)  # need to write this function
+        
+        v = 0
+        # TODO: define p
+        for action in self.get_successors(state):
+            # probability for second scene will be equal across all 8 neighbors and for staying put
+            # for scene 2, p = 1/9 ???
+            # p <- PROBABILIY(action)
+            p = 0.8  # dummy value for now
+            v = v + (p * self.max_value(action[0], action[1], depth + 1))
+            
+            """if v <= self.alpha:
+                return v
+            
+            self.beta = min(self.alpha, v) # maybe still here?"""
+        
+        return v
+
+    """expectimax search"""
+    def search(self, state, max_depth):
+        current_depth = 0
+        best_value = -math.inf
+        best_action = None
+        v = -math.inf
+
+        # grab the board and column for each successor
+        for s, a in self.get_successors(state):  # need to define this
+            # start recursive search for best value
+            v = max(v, self.exp_value(s, current_depth + 1))
+            if v > best_value:
+                best_value = v
+                best_action = a
+
+            # if an action results in a win, take that action
+            if s.exit_at(a[0], a[1]): 
+                return a
+
+        return best_action 
+
+    """ return a list of possible actions from current character position"""
+    def get_successors(self, state):
+        x = self.x 
+        y = self.y
+
+        successors = []
+        # check for valid neighbors
+        successors.append(self._validate(x + 1, y, wrld))  
+        successors.append(self._validate(x - 1, y, wrld))
+        successors.append(self._validate(x, y + 1, wrld))
+        successors.append(self._validate(x, y - 1, wrld))
+        successors.append(self._validate(x + 1, y + 1, wrld))  
+        successors.append(self._validate(x + 1, y - 1, wrld))
+        successors.append(self._validate(x - 1, y + 1, wrld))
+        successors.append(self._validate(x - 1, y - 1, wrld))
+        
+        # return all neighbors that aren't obstacles
+        return successors
+
+    def _validate(self, x, y, wrld):  
+        # check within bounds
+        if(x >= 0 and x < wrld.width() and y >= 0 and y < wrld.height()):
+            # check not a wall
+            if not wrld.wall_at(x, y):
+                return (wrld, (x, y))
+        
+        return None
 
 
 class Node():
