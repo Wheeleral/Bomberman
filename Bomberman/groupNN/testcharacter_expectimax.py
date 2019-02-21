@@ -15,6 +15,7 @@ class TestCharacter(CharacterEntity):
     max_depth = 1 # need to figure out how to set this
     #alpha = -math.inf
     #beta = math.inf
+	
 
     def do(self, wrld):
         action = self.search(wrld, self.max_depth)
@@ -133,6 +134,16 @@ class TestCharacter(CharacterEntity):
             print("at exit")
             score += 100
 
+	    #Checking for monsters
+        if self.nearMonster(x, y, wrld):
+	        score += -50
+		
+        if self.nearMonster2(x, y, wrld):
+	        score += -35
+		
+        if wrld.monsters_at(x,y):
+            score += -1000
+
         return score
 
     """ return a list of possible actions from current character position"""
@@ -170,6 +181,24 @@ class TestCharacter(CharacterEntity):
                 return True
         
         return False
+
+	#Returns true if within one square of a monster
+    def nearMonster(self, x, y, wrld):
+        if(wrld.monsters_at(x+1, y) or wrld.monsters_at(x-1, y) or wrld.monsters_at(x, y+1) 
+		    or wrld.monsters_at(x, y-1) or wrld.monsters_at(x+1, y+1) or wrld.monsters_at(x+1, y-1) 
+		    or wrld.monsters_at(x-1, y+1) or wrld.monsters_at(x-1, y-1)):
+	        return True
+        return False
+	#Return true is within two squares of a monster
+    def nearMonster2(self, x, y, wrld):
+	    if(wrld.monsters_at(x+2, y) or wrld.monsters_at(x-2, y) or wrld.monsters_at(x, y+2) 
+		    or wrld.monsters_at(x, y-2) or wrld.monsters_at(x+2, y+1) or wrld.monsters_at(x+2, y+2)
+		    or wrld.monsters_at(x+2, y-2) or wrld.monsters_at(x+2, y-1) 
+	        or wrld.monsters_at(x-2, y+2) or wrld.monsters_at(x-2, y-2)
+		    or wrld.monsters_at(x-2, y+1) or wrld.monsters_at(x-2, y-1)):
+		    return True
+	    else:
+		    return False
 
     # Wavefront for cost of each cell
 
