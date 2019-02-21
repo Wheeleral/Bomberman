@@ -13,10 +13,14 @@ class TestCharacter(CharacterEntity):
     directions = []
     i = 1
     max_depth = 1 # need to figure out how to set this
-    #alpha = -math.inf
-    #beta = math.inf
+    wavefront = [] # 2d array for grid
 
     def do(self, wrld):
+        if self.wavefront == []:
+            self.wavefront = [[0] * wrld.height() for i in range(wrld.width())]
+            self.init_wavefront(wrld)
+            self.populate_wavefront(wrld)
+        #print("wavefront: ", self.wavefront)
         action = self.search(wrld, self.max_depth)
         dx = action[0] - self.x
         dy = action[1] - self.y
@@ -59,11 +63,6 @@ class TestCharacter(CharacterEntity):
             # p <- PROBABILIY(action)
             p = 0.8  # dummy value for now
             v = v + (p * self.max_value(action[0], action[1], depth + 1))
-            
-            """if v <= self.alpha:
-                return v
-            
-            self.beta = min(self.alpha, v) # maybe still here?"""
         
         return v
 
@@ -104,29 +103,7 @@ class TestCharacter(CharacterEntity):
         # higher number as we near the goal
 
         # nearing the goal:
-        delta_x = abs(wrld.exitcell[0] - x)
-        delta_y = 0.4 * abs(wrld.exitcell[1] - y)
-
-        """
-        if self._validate(x + 1, y, wrld):
-            score -= 5  
-        if self._validate(x - 1, y, wrld):
-            score -= 5 
-        if self._validate(x, y + 1, wrld):
-            score -= 5 
-        if self._validate(x, y - 1, wrld):
-            score -= 5 
-        if self._validate(x + 1, y + 1, wrld):
-            score -= 5 
-        if self._validate(x + 1, y - 1, wrld):
-            score -= 5 
-        if self._validate(x - 1, y + 1, wrld):
-            score -= 5 
-        if self._validate(x - 1, y - 1, wrld):
-            score -= 5 
-        """
-
-        score += (dist - delta_x - delta_y)
+        score += self.wavefront[x][y]
 
         # at goal:
         if wrld.exit_at(x, y):
@@ -172,6 +149,69 @@ class TestCharacter(CharacterEntity):
         return False
 
     # Wavefront for cost of each cell
+    def init_wavefront(self, wrld):
+        # initialize wavefront
+        for x in range(wrld.width()):
+            for y in range(wrld.height()):
+                if wrld.wall_at(x, y): 
+                    self.wavefront[x][y] = -1
+
+        exit_x, exit_y = wrld.exitcell
+        self.wavefront[exit_x][exit_y] = 100 # this is the goal
+        #print("init:", self.wavefront)
+
+    def populate_wavefront(self, wrld):
+        print("enter populate")
+        neighbors = []
+        visited = []
+        value = 100
+        exit_x, exit_y = wrld.exitcell
+
+        neighbors = self.get_neighbors(exit_x, exit_y, value - 1, wrld)
+        visited.append((exit_x, exit_y))
+        for n in neighbors:
+            visited.append(n[1])
+
+        while neighbors:
+            #print("neighbors", neighbors)
+            # grab first neighbor from list 
+            curr_val, curr_coord = neighbors[0]
+            visited.append(curr_coord)
+            curr_x, curr_y = curr_coord
+            # give it a value in wavefront
+            self.wavefront[curr_x][curr_y] = curr_val
+            # call neighbors on it and add to list
+            children = self.get_neighbors(curr_x, curr_y, curr_val - 1, wrld)
+            for c in children:
+                if c[1] not in visited: # only add if we haven't checked this spot yet
+                    neighbors.append(c)
+                    visited.append(c[1])
+            # remove from list
+            neighbors.remove(neighbors[0])
+
+    def get_neighbors(self, x, y, value, state):
+        # list of tuples containing the value and a tuple of the coordinates
+        neighbors = []
+        # check for valid neighbors
+        if self._validate(x + 1, y, state):
+            neighbors.append((value, (x + 1, y)))  
+        if self._validate(x - 1, y, state):
+            neighbors.append((value, (x - 1, y)))
+        if self._validate(x, y + 1, state):
+            neighbors.append((value, (x, y + 1)))
+        if self._validate(x, y - 1, state):
+            neighbors.append((value, (x, y - 1)))
+        if self._validate(x + 1, y + 1, state):
+            neighbors.append((value, (x + 1, y + 1)))
+        if self._validate(x + 1, y - 1, state):
+            neighbors.append((value, (x + 1, y - 1)))
+        if self._validate(x - 1, y + 1, state):
+            neighbors.append((value, (x - 1, y + 1)))
+        if self._validate(x - 1, y - 1, state):
+            neighbors.append((value, (x - 1, y - 1)))
+        
+        # return all neighbors that aren't obstacles
+        return neighbors
 
 
 class Node():
