@@ -17,7 +17,7 @@ class AStarTestCharacter(CharacterEntity):
         if (self.i == 3):
             print("RESET")
             self.pathV = 0
-            self.i = 1;
+            self.i = 1
         start = (self.x, self.y)
         exit = wrld.exitcell
         print("astar" ,start, exit)

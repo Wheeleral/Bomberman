@@ -4,7 +4,7 @@ sys.path.insert(0, '../bomberman')
 # Import necessary stuff
 from entity import CharacterEntity
 from colorama import Fore, Back
-from math import sqrt
+from math import sqrt, inf
 import heapq
 import random
 
@@ -12,12 +12,16 @@ class TestCharacter(CharacterEntity):
     pathV = 0
     directions = []
     i = 1
-    max_depth = 4 # need to figure out how to set this
+    max_depth = 1 # need to figure out how to set this
     #alpha = -math.inf
     #beta = math.inf
 
     def do(self, wrld):
-    	pass
+        action = self.search(wrld, self.max_depth)
+        dx = action[0] - self.x
+        dy = action[1] - self.y
+        self.move(dx, dy)
+        pass
 
     """terminal test checks if state is max depth"""
     # might need to add more to this
@@ -28,11 +32,11 @@ class TestCharacter(CharacterEntity):
         return False
 
     """returns a utility value"""
-    def max_value(self, state, depth):
+    def max_value(self, state, a, depth):
         if self.terminal_test(depth):
-            return self.score_state(state)  # need to write this function
+            return self.score_state(state, a)  # need to write this function
         
-        v = -math.inf
+        v = -inf
         for action in self.get_successors(state):  # need to write this function
             v = max(v, self.exp_value(action[0], action[1], depth + 1))
             """if v >= self.beta:  
@@ -43,9 +47,9 @@ class TestCharacter(CharacterEntity):
         return v
 
     """returns a utility value"""
-    def exp_value(self, state, depth):
+    def exp_value(self, state, a, depth):
         if self.terminal_test(depth):
-            return self.score_state(state)  # need to write this function
+            return self.score_state(state, a)  # need to write this function
         
         v = 0
         # TODO: define p
@@ -66,23 +70,70 @@ class TestCharacter(CharacterEntity):
     """expectimax search"""
     def search(self, state, max_depth):
         current_depth = 0
-        best_value = -math.inf
+        best_value = -inf
         best_action = None
-        v = -math.inf
+        v = -inf
 
         # grab the board and column for each successor
         for s, a in self.get_successors(state):  # need to define this
             # start recursive search for best value
-            v = max(v, self.exp_value(s, current_depth + 1))
+            v = max(v, self.exp_value(s, a, current_depth + 1))
+            print("V", v)
             if v > best_value:
-                best_value = v
-                best_action = a
+                best_value = v 
+                best_action = a #tuple of x, y
 
             # if an action results in a win, take that action
             if s.exit_at(a[0], a[1]): 
                 return a
 
         return best_action 
+
+    """return a score for a world"""
+    def score_state(self, wrld, action):
+        score = 0
+        dist = 30 # dummy value for now
+        x = action[0]
+        y = action[1]
+
+        # at goal, give HUGE number
+        # if within 2 spaces of monster, negative number
+        # if within 1 space of monster, big negative number
+        # if on monster, HUGE negative number
+        # if within bomb radius, big negative number
+        # higher number as we near the goal
+
+        # nearing the goal:
+        delta_x = abs(wrld.exitcell[0] - x)
+        delta_y = 0.4 * abs(wrld.exitcell[1] - y)
+
+        """
+        if self._validate(x + 1, y, wrld):
+            score -= 5  
+        if self._validate(x - 1, y, wrld):
+            score -= 5 
+        if self._validate(x, y + 1, wrld):
+            score -= 5 
+        if self._validate(x, y - 1, wrld):
+            score -= 5 
+        if self._validate(x + 1, y + 1, wrld):
+            score -= 5 
+        if self._validate(x + 1, y - 1, wrld):
+            score -= 5 
+        if self._validate(x - 1, y + 1, wrld):
+            score -= 5 
+        if self._validate(x - 1, y - 1, wrld):
+            score -= 5 
+        """
+
+        score += (dist - delta_x - delta_y)
+
+        # at goal:
+        if wrld.exit_at(x, y):
+            print("at exit")
+            score += 100
+
+        return score
 
     """ return a list of possible actions from current character position"""
     def get_successors(self, state):
@@ -91,14 +142,22 @@ class TestCharacter(CharacterEntity):
 
         successors = []
         # check for valid neighbors
-        successors.append(self._validate(x + 1, y, wrld))  
-        successors.append(self._validate(x - 1, y, wrld))
-        successors.append(self._validate(x, y + 1, wrld))
-        successors.append(self._validate(x, y - 1, wrld))
-        successors.append(self._validate(x + 1, y + 1, wrld))  
-        successors.append(self._validate(x + 1, y - 1, wrld))
-        successors.append(self._validate(x - 1, y + 1, wrld))
-        successors.append(self._validate(x - 1, y - 1, wrld))
+        if self._validate(x + 1, y, state):
+            successors.append((state, (x + 1, y)))  
+        if self._validate(x - 1, y, state):
+            successors.append((state, (x - 1, y)))
+        if self._validate(x, y + 1, state):
+            successors.append((state, (x, y + 1)))
+        if self._validate(x, y - 1, state):
+            successors.append((state, (x, y - 1)))
+        if self._validate(x + 1, y + 1, state):
+            successors.append((state, (x + 1, y + 1)))
+        if self._validate(x + 1, y - 1, state):
+            successors.append((state, (x + 1, y - 1)))
+        if self._validate(x - 1, y + 1, state):
+            successors.append((state, (x - 1, y + 1)))
+        if self._validate(x - 1, y - 1, state):
+            successors.append((state, (x - 1, y - 1)))
         
         # return all neighbors that aren't obstacles
         return successors
@@ -108,9 +167,11 @@ class TestCharacter(CharacterEntity):
         if(x >= 0 and x < wrld.width() and y >= 0 and y < wrld.height()):
             # check not a wall
             if not wrld.wall_at(x, y):
-                return (wrld, (x, y))
+                return True
         
-        return None
+        return False
+
+    # Wavefront for cost of each cell
 
 
 class Node():
