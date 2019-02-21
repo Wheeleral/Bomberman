@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Required Software #
 
 To run Bomberman, you'll need Python 3 with the `colorama` and `pygame`
@@ -101,7 +100,7 @@ The most useful methods and attributes in this class are the following:
 - `wrld.monsters_at(x, y)`: returns a list of `MonsterEntity` objects if the cell `(x,y)` is occupied by monsters; the empty list `[]` otherwise
 - `wrld.characters_at(x, y)`: returns a list of `CharacterEntity` objects if the cell `(x,y)` is occupied by characters; the empty list `[]` otherwise
 - `wrld.printit()`: prints the current state of the world
-- `wrld.me()`: returns the object in the world that refers to the state of the current character
+- `wrld.me(character)`: returns the object in the world that refers to the state of the current character. From your method `go()` call it as follows: `wrld.me(self)`
 - `wrld.scores` is a dictionary `{ character_name : score }` that contains the score of every character.
 
 ## Available Actions ##
@@ -282,6 +281,3 @@ between to match the width defined by the first line.
 
 Any character or monster must be added in a Python file that runs the scenario.
 
-=======
-# CS4341-projects
->>>>>>> 741f82040a2114fe4ce1d7baf3aecd37ce78d73b

@@ -14,23 +14,27 @@ class AStarTestCharacter(CharacterEntity):
     i = 1
 
     def do(self, wrld):
-    	start = (self.dx, self.dy)
-    	exit = wrld.exitcell
-    	print("astar" ,start, exit)
+        if (self.i == 3):
+            print("RESET")
+            self.pathV = 0
+            self.i = 1;
+        start = (self.x, self.y)
+        exit = wrld.exitcell
+        print("astar" ,start, exit)
     	
-    	if(self.pathV == 0):
+        if(self.pathV == 0):
     	    path, self.directions = AStar(start, exit, wrld, wrld.width(), [])
     	    print("The path:", path)
     	    self.pathV=path
     	    for dir in self.pathV:
     	        self.set_cell_color(dir[0], dir[1], Fore.RED + Back.BLUE)
 
-    	print("The path: ", self.pathV, "part ", self.pathV[self.i])
-    	print("Directions", self.directions[self.i][0], "and ", self.directions[self.i][1])
-    	self.move(self.directions[self.i][0], self.directions[self.i][1])
-    	self.i+=1
+        print("The path: ", self.pathV, "part ", self.pathV[self.i])
+        print("Directions", self.directions[self.i][0], "and ", self.directions[self.i][1])
+        self.move(self.directions[self.i][0], self.directions[self.i][1])
+        self.i+=1
 
-    	pass
+        pass
 
 
 class Node():
@@ -62,12 +66,15 @@ class Node():
 
     # check if wall
     def _validate(self, x, y, gridCells, width, end, cost):  
-        a =True
         if(x >= 0 and x < gridCells.width() and y >= 0 and y <gridCells.height()):
             if (not gridCells.wall_at(x,y)):  # convert from x,y to grid cell number
                 cellCost = 0
                 if (cellCost != 0):
                     # creates new node using cost map
+                    if (nearMonster(x, y, gridCells)):
+                        cellCost = 10
+                    if (nearMonster2(x, y, gridCells)):
+                        cellCost = 5
                     return Node(self, (x, y), self.g + cellCost, heuristic((x, y), end))  
                 else:
                     # create new node using default
@@ -76,6 +83,24 @@ class Node():
            	    return None
         else:
             return None
+def nearMonster(x, y, wrld):
+    if(wrld.monsters_at(x+1, y) or wrld.monsters_at(x-1, y) or wrld.monsters_at(x, y+1) 
+        or wrld.monsters_at(x, y-1) or wrld.monsters_at(x+1, y+1) or wrld.monsters_at(x+1, y-1) 
+        or wrld.monsters_at(x-1, y+1) or wrld.monsters_at(x-1, y-1)):
+        return True
+    else:
+        return False
+
+def nearMonster2(x, y, wrld):
+    if(wrld.monsters_at(x+2, y) or wrld.monsters_at(x-2, y) or wrld.monsters_at(x, y+2) 
+        or wrld.monsters_at(x, y-2) or wrld.monsters_at(x+2, y+1) or wrld.monsters_at(x+2, y+2)
+        or wrld.monsters_at(x+2, y-2) or wrld.monsters_at(x+2, y-1) 
+        or wrld.monsters_at(x-2, y+2) or wrld.monsters_at(x-2, y-2)
+        or wrld.monsters_at(x-2, y+1) or wrld.monsters_at(x-2, y-1)):
+        return True
+    else:
+        return False
+
 
 """use Manhattan distance to get current distance"""
 def manhattan(p1, p2):  
@@ -94,13 +119,14 @@ def AStar(start, end, gridCells, width, cost):
     #startNode = Node(None, start, 0, manhattan(start, end)) 
     startNode = Node(None, start, 0, manhattan(start, end)) 
     # puts items into min heap
-    heapq.heappush(frontier, (startNode.f,  random.randint(1,1001)*random.randint(1,1001),  startNode))  
+    heapq.heappush(frontier, (startNode.f,  random.randint(1,10001)*random.randint(1,10001),  startNode))  
     #heapq.heappush(frontier, (startNode.f, startNode))  
 
     visited = {}
     
     while (len(frontier) > 0):  # if no solution, exit the while loop
         # The current node is the shortest distance
+        print("FRONTIER", frontier)
         cur = heapq.heappop(frontier) 
         cur = cur[2]
         #cur = cur[1]
@@ -114,8 +140,8 @@ def AStar(start, end, gridCells, width, cost):
         for neighbor in cur.getNeighbors(gridCells, width, end, cost):
             i = 0
             if (neighbor != None):
-                heapq.heappush(frontier, (neighbor.f,  random.randint(1,1001)*random.randint(1,1001) , neighbor))  # put the neighbor into the min heap
-                #heapq.heappush(frontier, (neighbor.f, neighbor))  # put the neighbor into the min heap
+                heapq.heappush(frontier, (neighbor.f,  random.randint(1,10001)*random.randint(1,1001) , neighbor))  # put the neighbor into the min heap
+                #heapq.heappush(frontier, (neighbor.f, neighbor))  # put t0e neighbor into the min heap
 
             i+=1
         visited[cur.pos] = cur  
