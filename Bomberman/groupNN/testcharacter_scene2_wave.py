@@ -154,17 +154,17 @@ class TestCharacter(CharacterEntity):
             # Determine how negative based on how close the character is to the bomb
             score += -(1 / self.nearBomb(x,y,wrld)) * 100
         
-        '''#Determine how long till bomb explodes
-            if wrld.bomb_at(x,y) is not None:
-                if wrld.bomb_at(x,y).timer < 2:
-                    score += -5
-                else:
-                    score += -1'''
+        #Determine how long till bomb explodes
+        if wrld.bomb_at(x,y) is not None:
+            if wrld.bomb_at(x,y).timer < 2:
+                score += -1000
+            else:
+                score += -500
         
         # Checking for explosion - avoid going towards it
         if wrld.explosion_at(x, y) is not None:
             score += -1000
-            
+        
         return score
 
     """ return a list of possible actions from current character position"""
