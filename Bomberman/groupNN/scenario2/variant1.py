@@ -8,7 +8,7 @@ from game import Game
 
 # TODO This is your code!
 sys.path.insert(1, '../groupNN')
-from testcharacter_expectimaxBomb import TestCharacter
+from testcharacter_scene2_wave import TestCharacter
 
 
 # Create the game
