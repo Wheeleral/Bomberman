@@ -146,17 +146,17 @@ class TestCharacter(CharacterEntity):
         if self.nearMonster2(x, y, wrld):
 	        score += -35
 		
-        if wrld.monsters_at(x,y):
+        if wrld.monsters_at(x, y):
             score += -1000
         
         # Checking whether within explosion range
-        if self.nearBomb(x,y,wrld) > 0:
+        if self.nearBomb(x, y, wrld) > 0:
             # Determine how negative based on how close the character is to the bomb
-            score += -(1 / self.nearBomb(x,y,wrld)) * 100
+            score += -(1 / self.nearBomb(x, y, wrld)) * 100
         
-        #Determine how long till bomb explodes
-        if wrld.bomb_at(x,y) is not None:
-            if wrld.bomb_at(x,y).timer < 2:
+        # Determine how long till bomb explodes
+        if wrld.bomb_at(x, y) is not None:
+            if wrld.bomb_at(x, y).timer < 2:
                 score += -1000
             else:
                 score += -500
