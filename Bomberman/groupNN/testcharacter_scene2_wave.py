@@ -158,8 +158,6 @@ class TestCharacter(CharacterEntity):
         if wrld.bomb_at(x, y) is not None:
             if wrld.bomb_at(x, y).timer < 2:
                 score += -1000
-            else:
-                score += -500
         
         # Checking for explosion - avoid going towards it
         if wrld.explosion_at(x, y) is not None:
