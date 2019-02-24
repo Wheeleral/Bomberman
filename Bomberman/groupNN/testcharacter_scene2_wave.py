@@ -26,10 +26,7 @@ class TestCharacter(CharacterEntity):
             self.init_wavefront(wrld)
             self.populate_wavefront(wrld)
             print("wavefront: ", self.wavefront)
-        # character will always be near explosion
-        #if self.explosion_near(self.x, self.y, wrld):
-        #    self.populate_wavefront(wrld) # rerun wavefront when a wall dies
-        #self.explosion_wrld(wrld)
+
         if self.time_explode == 3:
             self.populate_wavefront(wrld)
             self.explosion = False
@@ -53,23 +50,8 @@ class TestCharacter(CharacterEntity):
         
         pass
 
+    """check if there's an explosion anywhere in the world"""
     def explosion_wrld(self, wrld):
-        """if wrld.explosion_at(x - 1, y - 1):
-            return True
-        if wrld.explosion_at(x, y - 1):
-            return True
-        if wrld.explosion_at(x + 1, y - 1):
-            return True
-        if wrld.explosion_at(x - 1, y):
-            return True
-        if wrld.explosion_at(x + 1, y):
-            return True
-        if wrld.explosion_at(x - 1, y + 1):
-            return True
-        if wrld.explosion_at(x, y + 1):
-            return True
-        if wrld.explosion_at(x + 1, y + 1):
-            return True"""
         for x in range(wrld.width()):
             for y in range(wrld.height()):
                 if wrld.explosion_at(x, y):
@@ -94,10 +76,6 @@ class TestCharacter(CharacterEntity):
         v = -inf
         for action in self.get_successors(state):  # need to write this function
             v = max(v, self.exp_value(action[0], action[1], depth + 1))
-            """if v >= self.beta:  
-                return v
-            
-            self.alpha = max(self.alpha, v)"""
         
         return v
 
@@ -112,7 +90,7 @@ class TestCharacter(CharacterEntity):
             # probability for second scene will be equal across all 8 neighbors and for staying put
             # for scene 2, p = 1/9 ???
             # p <- PROBABILIY(action)
-            p = 0.8  # dummy value for now
+            p = 0.8  # dummy value for now (doesn't really matter because assume all ps are the same)
             v = v + (p * self.max_value(action[0], action[1], depth + 1))
         
         return v
@@ -232,6 +210,7 @@ class TestCharacter(CharacterEntity):
 		    or wrld.monsters_at(x-1, y+1) or wrld.monsters_at(x-1, y-1)):
 	        return True
         return False
+
 	#Return true is within two squares of a monster
     def nearMonster2(self, x, y, wrld):
 	    if(wrld.monsters_at(x+2, y) or wrld.monsters_at(x-2, y) or wrld.monsters_at(x, y+2) 
