@@ -15,17 +15,37 @@ class TestCharacter(CharacterEntity):
     i = 1
     max_depth = 1 # need to figure out how to set this
     wavefront = [] # 2d array for grid
+    explosion = False
+    #explosion = 0
+    time_explode = 0
 
     def do(self, wrld):
+        print("time:", self.time_explode)
         if self.wavefront == []:
             self.wavefront = [[0] * wrld.height() for i in range(wrld.width())]
             self.init_wavefront(wrld)
             self.populate_wavefront(wrld)
-        #print("wavefront: ", self.wavefront)
+            print("wavefront: ", self.wavefront)
+        # character will always be near explosion
+        #if self.explosion_near(self.x, self.y, wrld):
+        #    self.populate_wavefront(wrld) # rerun wavefront when a wall dies
+        #self.explosion_wrld(wrld)
+        if self.time_explode == 3:
+            self.populate_wavefront(wrld)
+            self.explosion = False
+            self.time_explode = 0
+            print("wavefront: ", self.wavefront)
+                 
         action= self.search(wrld, self.max_depth)
+        print("Taking ", action)
         dx = action[0] - self.x
         dy = action[1] - self.y
         self.move(dx, dy)
+
+        self.explosion = self.explosion_wrld(wrld)
+
+        if self.explosion:
+            self.time_explode += 1
         
         # Determine whether or not to place a bomb
         # FOR NOW: >0 and >1 passes variant5
@@ -33,6 +53,31 @@ class TestCharacter(CharacterEntity):
             self.place_bomb()
         
         pass
+
+    def explosion_wrld(self, wrld):
+        """if wrld.explosion_at(x - 1, y - 1):
+            return True
+        if wrld.explosion_at(x, y - 1):
+            return True
+        if wrld.explosion_at(x + 1, y - 1):
+            return True
+        if wrld.explosion_at(x - 1, y):
+            return True
+        if wrld.explosion_at(x + 1, y):
+            return True
+        if wrld.explosion_at(x - 1, y + 1):
+            return True
+        if wrld.explosion_at(x, y + 1):
+            return True
+        if wrld.explosion_at(x + 1, y + 1):
+            return True"""
+        for x in range(wrld.width()):
+            for y in range(wrld.height()):
+                if wrld.explosion_at(x, y):
+                    #self.populate_wavefront(wrld)
+                    return True
+        
+        return False
 
     """terminal test checks if state is max depth"""
     # might need to add more to this
@@ -84,7 +129,6 @@ class TestCharacter(CharacterEntity):
         for s, a in self.get_successors(state):  # need to define this
             # start recursive search for best value
             v = max(v, self.exp_value(s, a, current_depth + 1))
-            print("V", v)
             if v > best_value:
                 best_value = v 
                 best_action = a #tuple of x, y
@@ -115,32 +159,35 @@ class TestCharacter(CharacterEntity):
         # at goal:
         if wrld.exit_at(x, y):
             print("at exit")
-            score += 100
+            score += 10000
 
 	    #Checking for monsters
         if self.nearMonster(x, y, wrld):
-	        score += -70
+	        score += -500
 		
         if self.nearMonster2(x, y, wrld):
-	        score += -45
-        if self.nearMonster3(x,y, wrld):
-	        score += -30
-
+	        score += -400
 		
+        if self.nearMonster3(x,y, wrld):
+	        score += -300
+
+        if self.nearMonster4(x,y, wrld):
+	        score += -100
+
         if wrld.monsters_at(x,y):
             score += -1000
-        
+        if self.surrounded(x, y, wrld) < 3:
+	        score += -50
         # Checking whether within explosion range
         if self.nearBomb(x,y,wrld) > 0:
             # Determine how negative based on how close the character is to the bomb
-            score += -(1 / self.nearBomb(x,y,wrld)) * 100
+            print("bomb value of ", x, " and ", y , "score", -(2 / self.nearBomb(x,y,wrld)) * 100 )
+            score += -(2 / self.nearBomb(x,y,wrld)) * 500
         
-        '''#Determine how long till bomb explodes
-            if wrld.bomb_at(x,y) is not None:
-                if wrld.bomb_at(x,y).timer < 2:
-                    score += -5
-                else:
-                    score += -1'''
+        #Determine how long till bomb explodes
+        if wrld.bomb_at(x,y) is not None:
+            if wrld.bomb_at(x,y).timer < 2:
+                score += -1000
         
         # Checking for explosion - avoid going towards it
         if wrld.explosion_at(x, y) is not None:
@@ -171,13 +218,15 @@ class TestCharacter(CharacterEntity):
             successors.append((state, (x - 1, y + 1)))
         if self._validate(x - 1, y - 1, state):
             successors.append((state, (x - 1, y - 1)))
+		#if self._validate(x, y, state):
+        successors.append((state, (x,y)))
         
         # return all neighbors that aren't obstacles
         return successors
 
     def _validate(self, x, y, wrld):  
         # check within bounds
-        if(x >= 0 and x < wrld.width() and y >= 0 and y < wrld.height()):
+        if(x > 0 and x < wrld.width() and y > 0 and y < wrld.height()):
             # check not a wall
             if not wrld.wall_at(x, y):
                 return True
@@ -209,20 +258,37 @@ class TestCharacter(CharacterEntity):
 			        if(wrld.monsters_at(x+xs, y+ ys)):
 				        return True
         return False
+    def nearMonster4(self, x, y, wrld):
+        for xs in range (-4, 5, 1):
+	        for ys in range(-4,5 ,1 ):
+		        if(self._withinBound(x + xs, y + ys, wrld)):
+			        if(wrld.monsters_at(x+xs, y+ ys)):
+				        return True
+        return False
 
+	#return num of empty spaces nearby
+    def surrounded(self, x, y, wrld):
+        Nwalls = 0
+        for xs in range (-1, 2, 1):
+	        for ys in range(-1,2 ,1 ):
+		        if(self._withinBound(x + xs, y + ys, wrld)):
+			        if(wrld.empty_at(x+xs, y+ ys)):
+				         Nwalls += 1
+        return Nwalls
+	
     # Return the distance from bomb if is within the range of explosion
     def nearBomb(self, x, y, wrld):
         bomb_distance = []
         
         # Distance from bomb in the x-position
-        for xs in range(-4, 5, 1):
+        for xs in range(-5, 6, 1):
             if self._withinBound(x + xs, y, wrld):
                 if wrld.bomb_at(x + xs, y):
                     bomb_distance.append(abs(xs))
                     # return abs(xs)
         
         # Distance from the bomb in the y-position
-        for ys in range(-4, 5, 1):
+        for ys in range(-5, 6, 1):
             if self._withinBound(x, y + ys, wrld):
                 if wrld.bomb_at(x, y + ys):
                     bomb_distance.append(abs(ys))
@@ -237,7 +303,7 @@ class TestCharacter(CharacterEntity):
     # Determines whether the position is within grid world
     def _withinBound(self, x, y, wrld):
         # check within bounds
-        if(x >= 0 and x < wrld.width() and y >= 0 and y < wrld.height()):
+        if(x > 0 and x < wrld.width() and y > 0 and y < wrld.height()):
             return True
         
         return False
@@ -252,44 +318,44 @@ class TestCharacter(CharacterEntity):
             if self._withinBound(x + xs, y, wrld):
                 if wrld.wall_at(x + xs, y):
                     obstacles += 1
-                    break;
+                    break
                 
                 if wrld.monsters_at(x + xs, y):
                     obstacles += 1
-                    break;
+                    break
                     
         for xs in range(1, 5):
             # Get first obstacle on the left
             if self._withinBound(x - xs, y, wrld):
                 if wrld.wall_at(x - xs, y):
                     obstacles += 1
-                    break;
+                    break
                 
                 if wrld.monsters_at(x - xs, y):
                     obstacles += 1
-                    break;
+                    break
         
         for ys in range(1, 5):
             # Get first obstacle at the top
             if self._withinBound(x, y + ys, wrld):
                 if wrld.wall_at(x, y + ys):
                     obstacles += 1
-                    break;
+                    break
                 
                 if wrld.monsters_at(x, y + ys):
                     obstacles += 1
-                    break;
+                    break
         
         for ys in range(1, 5):
             # Get first obstacle at the bottom
             if self._withinBound(x, y - ys, wrld):
                 if wrld.wall_at(x, y - ys):
                     obstacles += 1
-                    break;
+                    break
                 
                 if wrld.monsters_at(x, y - ys):
                     obstacles += 1
-                    break;
+                    break
             
         return obstacles
 
@@ -298,8 +364,9 @@ class TestCharacter(CharacterEntity):
         # initialize wavefront
         for x in range(wrld.width()):
             for y in range(wrld.height()):
-                if wrld.wall_at(x, y): 
-                    self.wavefront[x][y] = -1
+                #if wrld.wall_at(x, y): 
+                    #self.wavefront[x][y] = -1
+                pass
 
         exit_x, exit_y = wrld.exitcell
         self.wavefront[exit_x][exit_y] = 100 # this is the goal
@@ -312,7 +379,7 @@ class TestCharacter(CharacterEntity):
         value = 100
         exit_x, exit_y = wrld.exitcell
 
-        neighbors = self.get_neighbors(exit_x, exit_y, value - 1, wrld)
+        neighbors = self.get_neighbors(exit_x, exit_y, value - 1, wrld) # now includes walls
         visited.append((exit_x, exit_y))
         for n in neighbors:
             visited.append(n[1])
@@ -324,7 +391,12 @@ class TestCharacter(CharacterEntity):
             visited.append(curr_coord)
             curr_x, curr_y = curr_coord
             # give it a value in wavefront
-            self.wavefront[curr_x][curr_y] = curr_val
+            if wrld.wall_at(curr_x, curr_y):
+                self.wavefront[curr_x][curr_y] = curr_val - 6 # minus 5 for now
+                curr_val -= 6
+            else:
+                self.wavefront[curr_x][curr_y] = curr_val
+
             # call neighbors on it and add to list
             children = self.get_neighbors(curr_x, curr_y, curr_val - 1, wrld)
             for c in children:
@@ -338,21 +410,21 @@ class TestCharacter(CharacterEntity):
         # list of tuples containing the value and a tuple of the coordinates
         neighbors = []
         # check for valid neighbors
-        if self._validate(x + 1, y, state):
+        if self._withinBound(x + 1, y, state):
             neighbors.append((value, (x + 1, y)))  
-        if self._validate(x - 1, y, state):
+        if self._withinBound(x - 1, y, state):
             neighbors.append((value, (x - 1, y)))
-        if self._validate(x, y + 1, state):
+        if self._withinBound(x, y + 1, state):
             neighbors.append((value, (x, y + 1)))
-        if self._validate(x, y - 1, state):
+        if self._withinBound(x, y - 1, state):
             neighbors.append((value, (x, y - 1)))
-        if self._validate(x + 1, y + 1, state):
+        if self._withinBound(x + 1, y + 1, state):
             neighbors.append((value, (x + 1, y + 1)))
-        if self._validate(x + 1, y - 1, state):
+        if self._withinBound(x + 1, y - 1, state):
             neighbors.append((value, (x + 1, y - 1)))
-        if self._validate(x - 1, y + 1, state):
+        if self._withinBound(x - 1, y + 1, state):
             neighbors.append((value, (x - 1, y + 1)))
-        if self._validate(x - 1, y - 1, state):
+        if self._withinBound(x - 1, y - 1, state):
             neighbors.append((value, (x - 1, y - 1)))
         
         # return all neighbors that aren't obstacles
