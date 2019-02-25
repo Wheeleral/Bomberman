@@ -20,10 +20,6 @@ class TestCharacter(CharacterEntity):
     time_explode = 0
 
     def do(self, wrld):
-        print("MOSNTOR", wrld.monsters)
-        allmons = wrld.monsters.items()
-        for w in wrld.monsters:
-            print("A MON",)
         print("time:", self.time_explode)
         if self.wavefront == []:
             self.wavefront = [[0] * wrld.height() for i in range(wrld.width())]
@@ -96,7 +92,7 @@ class TestCharacter(CharacterEntity):
             return self.score_state(state, a)  # need to write this function
         
         v = -inf
-        for action in self.get_successors(state, a):  # need to write this function
+        for action in self.get_successors(state):  # need to write this function
             v = max(v, self.exp_value(action[0], action[1], depth + 1))
             """if v >= self.beta:  
                 return v
@@ -112,13 +108,12 @@ class TestCharacter(CharacterEntity):
         
         v = 0
         # TODO: define p
-        for action in self.get_successors(state, a):
+        for action in self.get_successors(state):
             # probability for second scene will be equal across all 8 neighbors and for staying put
             # for scene 2, p = 1/9 ???
             # p <- PROBABILIY(action)
             p = 0.8  # dummy value for now
             v = v + (p * self.max_value(action[0], action[1], depth + 1))
-            print("EXp", action[1], " v", v )
         
         return v
 
@@ -128,13 +123,12 @@ class TestCharacter(CharacterEntity):
         best_value = -inf
         best_action = None
         v = -inf
-        pos = (self.x, self.y)
-        # grab the board and column for each successor
-        for s, a in self.get_successors(state, pos):  # need to define this
-            # start recursive search for best value
 
+        # grab the board and column for each successor
+        for s, a in self.get_successors(state):  # need to define this
+            # start recursive search for best value
             v = max(v, self.exp_value(s, a, current_depth + 1))
-            print("V", v, " A ", a)
+            print("V", v)
             if v > best_value:
                 best_value = v 
                 best_action = a #tuple of x, y
@@ -169,14 +163,13 @@ class TestCharacter(CharacterEntity):
 
 	    #Checking for monsters
         if self.nearMonster(x, y, wrld):
-	        score += -100
+	        score += -500
 		
         if self.nearMonster2(x, y, wrld):
-	        score += -80
+	        score += -300
 		
         if self.nearMonster3(x,y, wrld):
-	        score += -50
-
+	        score += -100
 
         if wrld.monsters_at(x,y):
             score += -1000
@@ -184,23 +177,23 @@ class TestCharacter(CharacterEntity):
         # Checking whether within explosion range
         if self.nearBomb(x,y,wrld) > 0:
             # Determine how negative based on how close the character is to the bomb
-            score += -(1 / self.nearBomb(x,y,wrld)) * 100
+            score += -(1 / self.nearBomb(x,y,wrld)) * 1000
         
         #Determine how long till bomb explodes
         if wrld.bomb_at(x,y) is not None:
-            if wrld.bomb_at(x,y).timer < 2:
+            if wrld.bomb_at(x,y).timer < 1:
                 score += -1000
         
         # Checking for explosion - avoid going towards it
         if wrld.explosion_at(x, y) is not None:
             score += -1000
-        print("Score", score, action)
+        
         return score
 
     """ return a list of possible actions from current character position"""
-    def get_successors(self, state, a):
-        x = a[0] 
-        y = a[1]
+    def get_successors(self, state):
+        x = self.x 
+        y = self.y
 
         successors = []
         # check for valid neighbors
@@ -220,8 +213,8 @@ class TestCharacter(CharacterEntity):
             successors.append((state, (x - 1, y + 1)))
         if self._validate(x - 1, y - 1, state):
             successors.append((state, (x - 1, y - 1)))
-        if self._validate(x, y, state):
-	        successors.append((state, (x,y)))
+		#if self._validate(x, y, state):
+	    successors.append((state, (x,y)))
         
         # return all neighbors that aren't obstacles
         return successors
