@@ -74,27 +74,56 @@ class TestCharacter(CharacterEntity):
             return self.score_state(state, a)  # need to write this function
         
         v = -inf
-        for action in self.get_successors(state):  # need to write this function
+        for action in self.get_successors(state):  
             v = max(v, self.exp_value(action[0], action[1], depth + 1))
         
         return v
 
     """returns a utility value"""
+    """THIS IS HOW THE MONSTER MOVES"""
     def exp_value(self, state, a, depth):
         if self.terminal_test(depth):
-            return self.score_state(state, a)  # need to write this function
+            return self.score_state(state, a)  
         
         v = 0
+        # find closest monster
+        closest_monster = self.find_monster(wrld)
+
+        # get successors of that monster
+        
         # TODO: define p
-        for action in self.get_successors(state):
-            # probability for second scene will be equal across all 8 neighbors and for staying put
-            # for scene 2, p = 1/9 ???
-            # p <- PROBABILIY(action)
-            #p = 0.8  # dummy value for now (doesn't really matter because assume all ps are the same)
+        for action in self.get_successors(state): # how do we account for the monster's location?
+            #p = self.monster_prob(action[0], action[1]) # this doesn't account for the monster movement
             p = 1/9
             v = v + (p * self.max_value(action[0], action[1], depth + 1))
         
         return v
+
+    def find_monster(self, wrld):
+        count = 0
+        monsters = []
+        closest_m = None
+        closest_dist = 0
+
+        # grab all monsters
+        for x in range(wrld.width()):
+            for y in range(wrld.height()):
+                curr_monsters = wrld.monsters_at(x, y)
+                for m in curr_monsters:
+                    monsters.append((m, (x, y)))
+        
+        # return closest one
+        for m in monsters:
+            if (closest_m == None):
+                closest_m = m
+                closest_dist = sqrt((m[1][0] * m[1][0]) + (m[1][1] * m[1][1]))
+            else:
+                dist = sqrt((m[1][0] * m[1][0]) + (m[1][1] * m[1][1]))
+                if dist < closest_dist:
+                    closest_m = m
+                    closest_dist = dist
+        
+        return closest_m
 
     """expectimax search"""
     def search(self, state, max_depth):
@@ -117,6 +146,15 @@ class TestCharacter(CharacterEntity):
                 return a
 
         return best_action 
+
+    #TODO: write function
+    """return the most likely move for monster"""
+    def monster_prob(self, wrld, action):
+        char_x = action[0]
+        char_y = action[1]
+
+        # monster will chase character
+        return 1/9
 
     """return a score for a world"""
     def score_state(self, wrld, action):
