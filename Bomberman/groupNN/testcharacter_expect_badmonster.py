@@ -108,7 +108,10 @@ class TestCharacter(CharacterEntity):
         for action in monster_actions: 
             #p = self.monster_prob(action[0], action[1]) # this doesn't account for the monster movement
             action[0].next() # move the monster
-            p = 1/8
+            
+            p = self.monster_prob(action[0], a, action[1])
+            
+            #p = 1/8
             # pass copied world with new monster loc and the old action for the character
             v = v + (p * self.max_value(action[0], a, depth + 1)) 
         
@@ -116,8 +119,8 @@ class TestCharacter(CharacterEntity):
 
     def get_monster_actions(self, wrld, loc):
         x, y = loc  
-        arr = [(x - 1, y - 1), (x, y - 1), (x + 1, y - 1)
-               (x - 1, y), (x + 1, y)
+        arr = [(x - 1, y - 1), (x, y - 1), (x + 1, y - 1),
+               (x - 1, y), (x + 1, y),
                (x - 1, y + 1), (x, y + 1), (x + 1, y + 1)]
 
         successors = []
@@ -183,14 +186,22 @@ class TestCharacter(CharacterEntity):
 
         return best_action 
 
-    #TODO: write function
+    #TODO: write function for smart monster
     """return the most likely move for monster"""
-    def monster_prob(self, wrld, action):
-        char_x = action[0]
-        char_y = action[1]
+    def monster_prob(self, wrld, char_loc, monster_loc):
+        cx, cy = char_loc
+        mx, my = monster_loc
 
-        # monster will chase character
-        return 1/9
+        # find distance between character and closest monster
+        dx = abs(mx - cx)
+        dy = abs(my - cy)
+        euclidean = sqrt((dx * dx) + (dy * dy))
+
+        print("char_loc:", char_loc, "monster_loc:", monster_loc, "weight:", 1/euclidean)
+
+        # monster will probably chase character, therefore, higher weight goes to actions
+        # that move monster closer to character
+        return 1/euclidean
 
     """return a score for a world"""
     def score_state(self, wrld, action):
