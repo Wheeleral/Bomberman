@@ -8,12 +8,18 @@ from math import sqrt, inf
 import heapq
 import random
 from operator import itemgetter
+from sensed_world import SensedWorld
+
+# TODO: refactor
+# TODO: write the probability function to expect monster to move towards character
+# TODO: modify sensedworld so we're actually moving character
+# TODO: modify score function values
 
 class TestCharacter(CharacterEntity):			
     pathV = 0
     directions = []
     i = 1
-    max_depth = 1 # need to figure out how to set this
+    max_depth = 2 # need to figure out how to set this
     wavefront = [] # 2d array for grid
     explosion = False
     #explosion = 0
@@ -69,7 +75,8 @@ class TestCharacter(CharacterEntity):
         return False
 
     """returns a utility value"""
-    def max_value(self, state, a, depth):
+    def max_value(self, state, a, depth, monster_loc):
+        #print("monster location in copyWrld:", monster_loc)
         if self.terminal_test(depth):
             return self.score_state(state, a)  # need to write this function
         
@@ -87,17 +94,78 @@ class TestCharacter(CharacterEntity):
         
         v = 0
         # find closest monster
-        closest_monster = self.find_monster(wrld)
-
-        # get successors of that monster
+        closest_monster = self.find_monster(state)
+        #print("monster loc:", closest_monster[1])
+     
+        # get successors of that monster in copied worlds
+        monster_actions = self.get_monster_actions(state, closest_monster[1])
         
         # TODO: define p
-        for action in self.get_successors(state): # how do we account for the monster's location?
+        for action in monster_actions: 
             #p = self.monster_prob(action[0], action[1]) # this doesn't account for the monster movement
-            p = 1/9
-            v = v + (p * self.max_value(action[0], action[1], depth + 1))
+            action[0].next() # move the monster
+            p = 1/8
+            # pass copied world with new monster loc and the old action for the character
+            v = v + (p * self.max_value(action[0], a, depth + 1, action[1])) 
         
         return v
+
+    def get_monster_actions(self, wrld, loc):
+        x, y = loc  
+        successors = []
+        # check for valid neighbors
+        if self._validate(x + 1, y, wrld):
+            # copy the world so we can move the monster
+            cpyWrld = SensedWorld.from_world(wrld)
+            monster = cpyWrld.monsters_at(x, y)[0]
+            monster.move(x + 1, y)
+
+            successors.append((cpyWrld, (x + 1, y)))  
+        if self._validate(x - 1, y, wrld):
+            cpyWrld = SensedWorld.from_world(wrld)
+            monster = cpyWrld.monsters_at(x, y)[0]
+            monster.move(x - 1, y)
+
+            successors.append((cpyWrld, (x - 1, y)))
+        if self._validate(x, y + 1, wrld):
+            cpyWrld = SensedWorld.from_world(wrld)
+            monster = cpyWrld.monsters_at(x, y)[0]
+            monster.move(x, y + 1)
+
+            successors.append((cpyWrld, (x, y + 1)))
+        if self._validate(x, y - 1, wrld):
+            cpyWrld = SensedWorld.from_world(wrld)
+            monster = cpyWrld.monsters_at(x, y)[0]
+            monster.move(x, y - 1)
+
+            successors.append((cpyWrld, (x, y - 1)))
+        if self._validate(x + 1, y + 1, wrld):
+            cpyWrld = SensedWorld.from_world(wrld)
+            monster = cpyWrld.monsters_at(x, y)[0]
+            monster.move(x + 1, y + 1)
+
+            successors.append((cpyWrld, (x + 1, y + 1)))
+        if self._validate(x + 1, y - 1, wrld):
+            cpyWrld = SensedWorld.from_world(wrld)
+            monster = cpyWrld.monsters_at(x, y)[0]
+            monster.move(x + 1, y - 1)
+
+            successors.append((cpyWrld, (x + 1, y - 1)))
+        if self._validate(x - 1, y + 1, wrld):
+            cpyWrld = SensedWorld.from_world(wrld)
+            monster = cpyWrld.monsters_at(x, y)[0]
+            monster.move(x - 1, y + 1)
+
+            successors.append((cpyWrld, (x - 1, y + 1)))
+        if self._validate(x - 1, y - 1, wrld):
+            cpyWrld = SensedWorld.from_world(wrld)
+            monster = cpyWrld.monsters_at(x, y)[0]
+            monster.move(x - 1, y - 1)
+
+            successors.append((cpyWrld, (x - 1, y - 1)))
+        
+        # return all neighbors that aren't obstacles
+        return successors
 
     def find_monster(self, wrld):
         count = 0
@@ -109,8 +177,9 @@ class TestCharacter(CharacterEntity):
         for x in range(wrld.width()):
             for y in range(wrld.height()):
                 curr_monsters = wrld.monsters_at(x, y)
-                for m in curr_monsters:
-                    monsters.append((m, (x, y)))
+                if curr_monsters:
+                    for m in curr_monsters:
+                        monsters.append((m, (x, y)))
         
         # return closest one
         for m in monsters:
@@ -176,33 +245,56 @@ class TestCharacter(CharacterEntity):
         # at goal:
         if wrld.exit_at(x, y):
             print("at exit")
-            score += 100
+            score += 10000
 
 	    #Checking for monsters
         if self.nearMonster(x, y, wrld):
-	        score += -50
+	        score += -500
 		
         if self.nearMonster2(x, y, wrld):
-	        score += -35
+	        score += -400
 		
-        if wrld.monsters_at(x, y):
+        if self.nearMonster3(x,y, wrld):
+	        score += -300
+
+        if wrld.monsters_at(x,y):
             score += -1000
-        
+        if self.surrounded(x, y, wrld) < 3:
+	        score += -50
         # Checking whether within explosion range
-        if self.nearBomb(x, y, wrld) > 0:
+        if self.nearBomb(x,y,wrld) > 0:
             # Determine how negative based on how close the character is to the bomb
-            score += -(1 / self.nearBomb(x, y, wrld)) * 100
+            #print("bomb value of ", x, " and ", y , "score", -(2 / self.nearBomb(x,y,wrld)) * 100 )
+            score += -(2 / self.nearBomb(x,y,wrld)) * 500
         
-        # Determine how long till bomb explodes
-        if wrld.bomb_at(x, y) is not None:
-            if wrld.bomb_at(x, y).timer < 2:
+        #Determine how long till bomb explodes
+        if wrld.bomb_at(x,y) is not None:
+            if wrld.bomb_at(x,y).timer < 2:
                 score += -1000
         
         # Checking for explosion - avoid going towards it
         if wrld.explosion_at(x, y) is not None:
             score += -1000
-        
+        #print("score ", score, " a ", action)
         return score
+
+    def nearMonster3(self, x, y, wrld):
+        for xs in range (-3, 4, 1):
+	        for ys in range(-3,4 ,1 ):
+		        if(self._withinBound(x + xs, y + ys, wrld)):
+			        if(wrld.monsters_at(x+xs, y+ ys)):
+				        return True
+        return False
+
+	#return num of empty spaces nearby
+    def surrounded(self, x, y, wrld):
+        Nwalls = 0
+        for xs in range (-1, 2, 1):
+	        for ys in range(-1,2 ,1 ):
+		        if(self._withinBound(x + xs, y + ys, wrld)):
+			        if(wrld.empty_at(x+xs, y+ ys)):
+				         Nwalls += 1
+        return Nwalls
 
     """ return a list of possible actions from current character position"""
     def get_successors(self, state):
@@ -227,6 +319,8 @@ class TestCharacter(CharacterEntity):
             successors.append((state, (x - 1, y + 1)))
         if self._validate(x - 1, y - 1, state):
             successors.append((state, (x - 1, y - 1)))
+        if self._validate(x, y, state):
+            successors.append((state, (x, y)))
         
         # return all neighbors that aren't obstacles
         return successors
@@ -356,7 +450,7 @@ class TestCharacter(CharacterEntity):
         #print("init:", self.wavefront)
 
     def populate_wavefront(self, wrld):
-        print("enter populate")
+        #print("enter populate")
         neighbors = []
         visited = []
         value = 100
