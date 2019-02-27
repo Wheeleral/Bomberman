@@ -11,8 +11,6 @@ from operator import itemgetter
 from sensed_world import SensedWorld
 
 # TODO: refactor 
-# TODO: write the probability function to expect monster to move towards character (ERIKA)
-# TODO: modify sensedworld so we're actually moving character (ALEX)
 # TODO: modify score function values
 
 class TestCharacter(CharacterEntity):			
@@ -55,17 +53,9 @@ class TestCharacter(CharacterEntity):
         
         pass
 
-    """check if there's an explosion anywhere in the world"""
-    def explosion_wrld(self, wrld):
-        for x in range(wrld.width()):
-            for y in range(wrld.height()):
-                if wrld.explosion_at(x, y):
-                    return True
-        
-        return False
+    #---------- EXPECTIMAX SEARCH ----------#
 
-    """terminal test checks if state is max depth"""
-    # might need to add more to this
+    """checks if state is max depth"""
     def terminal_test(self, depth):
         if depth >= self.max_depth:
             return True
@@ -90,8 +80,6 @@ class TestCharacter(CharacterEntity):
             return self.score_state(state, a)  
         
         v = 0
-
-        # find closest monster
         closest_monster = self.find_monster(state)
         #print("monster loc:", closest_monster[1])
 
@@ -104,9 +92,7 @@ class TestCharacter(CharacterEntity):
         # get successors of that monster in copied worlds
         monster_actions = self.get_monster_actions(state, closest_monster[1])
         
-        # TODO: define p
         for action in monster_actions: 
-            #p = self.monster_prob(action[0], action[1]) # this doesn't account for the monster movement
             action[0].next() # move the monster
             
             p = self.monster_prob(action[0], a, action[1])
@@ -116,55 +102,6 @@ class TestCharacter(CharacterEntity):
             v = v + ((p) * self.max_value(action[0], a, depth + 1)) 
         
         return v
-
-    def get_monster_actions(self, wrld, loc):
-        x, y = loc  
-        arr = [(x - 1, y - 1), (x, y - 1), (x + 1, y - 1),
-               (x - 1, y), (x + 1, y),
-               (x - 1, y + 1), (x, y + 1), (x + 1, y + 1)]
-
-        successors = []
-        # check for valid neighbors
-        for elt in arr:
-            if self._validate(elt[0], elt[1], wrld):
-                # copy the world so we can move the monster
-                cpyWrld = SensedWorld.from_world(wrld)
-                monster = cpyWrld.monsters_at(x, y)[0]
-                monster.move(elt[0], elt[1])
-
-                successors.append((cpyWrld, elt))
-        
-        # return all neighbors that aren't obstacles
-        return successors
-
-    def find_monster(self, wrld): ##TAKE IN MES DISTANCE
-        count = 0
-        monsters = []
-        closest_m = None
-        closest_dist = 0
-        me = wrld.me(self)
-        x = me.x
-        y = me.y
-        # grab all monsters
-        for x in range(wrld.width()):
-            for y in range(wrld.height()):
-                curr_monsters = wrld.monsters_at(x, y)
-                if curr_monsters:
-                    for m in curr_monsters:
-                        monsters.append((m, (x, y)))
-        
-        # return closest one
-        for m in monsters:
-            if (closest_m == None):
-                closest_m = m
-                closest_dist = sqrt((x - m[1][0])*(x - m[1][0]) + (y - m[1][1])*(y - m[1][1]))
-            else:
-                dist = sqrt((x - m[1][0])*(x - m[1][0]) + (y - m[1][1])*(y - m[1][1]))
-                if dist < closest_dist:
-                    closest_m = m
-                    closest_dist = dist
-        
-        return closest_m
 
     """expectimax search"""
     def search(self, state, max_depth):
@@ -195,8 +132,7 @@ class TestCharacter(CharacterEntity):
 
         return best_action 
 
-    #TODO: write function for smart monster
-    """return the most likely move for monster"""
+    """returns the most likely move for monster"""
     def monster_prob(self, wrld, char_loc, monster_loc):
         cx, cy = char_loc
         mx, my = monster_loc
@@ -214,7 +150,7 @@ class TestCharacter(CharacterEntity):
 	        return 1
         return 1/euclidean
 
-    """return a score for a world"""
+    """returns a score for a world"""
     def score_state(self, wrld, action):
         score = 0
         dist = 30 # dummy value for now
@@ -267,15 +203,62 @@ class TestCharacter(CharacterEntity):
         #print("score ", score, " a ", action)
         return score
 
-    def nearMonster3(self, x, y, wrld):
-        for xs in range (-3, 4, 1):
-	        for ys in range(-3,4 ,1 ):
-		        if(self._withinBound(x + xs, y + ys, wrld)):
-			        if(wrld.monsters_at(x+xs, y+ ys)):
-				        return True
-        return False
+    #---------- EXPECTIMAX HELPERS ----------#
+    """returns a list of possible monster actions from current monster position"""
+    def get_monster_actions(self, wrld, loc):
+        x, y = loc  
+        arr = [(x - 1, y - 1), (x, y - 1), (x + 1, y - 1),
+               (x - 1, y), (x + 1, y),
+               (x - 1, y + 1), (x, y + 1), (x + 1, y + 1)]
 
-	#return num of empty spaces nearby
+        successors = []
+        # check for valid neighbors
+        for elt in arr:
+            if self._validate(elt[0], elt[1], wrld):
+                # copy the world so we can move the monster
+                cpyWrld = SensedWorld.from_world(wrld)
+                monster = cpyWrld.monsters_at(x, y)[0]
+                monster.move(elt[0], elt[1])
+
+                successors.append((cpyWrld, elt))
+        
+        # return all neighbors that aren't obstacles
+        return successors
+
+    """returns the nearest monster to the character"""
+    def find_monster(self, wrld): 
+        count = 0
+        monsters = []
+        closest_m = None
+        closest_dist = 0
+        me = wrld.me(self)
+        x = me.x
+        y = me.y
+
+        # grab all monsters
+        for x in range(wrld.width()):
+            for y in range(wrld.height()):
+                curr_monsters = wrld.monsters_at(x, y)
+                if curr_monsters:
+                    for m in curr_monsters:
+                        monsters.append((m, (x, y)))
+        
+        # return closest one
+        for m in monsters:
+            dx = abs(x - m[1][0])
+            dy = abs(y - m[1][1])
+            if (closest_m == None):
+                closest_m = m
+                closest_dist = sqrt((dx * dx) + (dy * dy))
+            else:
+                dist = sqrt((dx * dx) + (dy * dy))
+                if dist < closest_dist:
+                    closest_m = m
+                    closest_dist = dist
+        
+        return closest_m
+
+	"""returns num of empty spaces nearby"""
     def surrounded(self, x, y, wrld):
         Nwalls = 0
         for xs in range (-1, 2, 1):
@@ -285,7 +268,7 @@ class TestCharacter(CharacterEntity):
 				         Nwalls += 1
         return Nwalls
 
-    """ return a list of possible actions from current character position"""
+    """returns a list of possible character actions from current character position"""
     def get_successors(self, state):
         x = self.x 
         y = self.y
@@ -314,6 +297,7 @@ class TestCharacter(CharacterEntity):
         # return all neighbors that aren't obstacles
         return successors
 
+    """checks if location is within the world and not a wall"""
     def _validate(self, x, y, wrld):  
         # check within bounds
         if(x >= 0 and x < wrld.width() and y >= 0 and y < wrld.height()):
@@ -323,7 +307,7 @@ class TestCharacter(CharacterEntity):
         
         return False
 
-	#Returns true if within one square of a monster
+	"""checks if location is within one square of a monster"""
     def nearMonster(self, x, y, wrld):
         if(wrld.monsters_at(x+1, y) or wrld.monsters_at(x-1, y) or wrld.monsters_at(x, y+1) 
 		    or wrld.monsters_at(x, y-1) or wrld.monsters_at(x+1, y+1) or wrld.monsters_at(x+1, y-1) 
@@ -331,7 +315,7 @@ class TestCharacter(CharacterEntity):
 	        return True
         return False
 
-	#Return true is within two squares of a monster
+	"""checks if location is within two squares of a monster"""
     def nearMonster2(self, x, y, wrld):
 	    if(wrld.monsters_at(x+2, y) or wrld.monsters_at(x-2, y) or wrld.monsters_at(x, y+2) 
 		    or wrld.monsters_at(x, y-2) or wrld.monsters_at(x+2, y+1) or wrld.monsters_at(x+2, y+2)
@@ -341,8 +325,17 @@ class TestCharacter(CharacterEntity):
 		    return True
 	    else:
 		    return False
+    
+    """checks if location is within three squares of a monster"""
+    def nearMonster3(self, x, y, wrld):
+        for xs in range (-3, 4, 1):
+	        for ys in range(-3,4 ,1 ):
+		        if(self._withinBound(x + xs, y + ys, wrld)):
+			        if(wrld.monsters_at(x+xs, y+ ys)):
+				        return True
+        return False
 
-    # Return the distance from bomb if is within the range of explosion
+    """returns the distance from bomb if location is within the range of explosion"""
     def nearBomb(self, x, y, wrld):
         bomb_distance = []
         
@@ -366,7 +359,7 @@ class TestCharacter(CharacterEntity):
         
         return 0
     
-    # Determines whether the position is within grid world
+    """determines whether the position is within grid world"""
     def _withinBound(self, x, y, wrld):
         # check within bounds
         if(x >= 0 and x < wrld.width() and y >= 0 and y < wrld.height()):
@@ -374,7 +367,17 @@ class TestCharacter(CharacterEntity):
         
         return False
         
-    # Evaluates the number of obstacles in the current position of character 
+    #---------- OTHER HELPERS ----------#
+    """checks if there's an explosion anywhere in the world"""
+    def explosion_wrld(self, wrld):
+        for x in range(wrld.width()):
+            for y in range(wrld.height()):
+                if wrld.explosion_at(x, y):
+                    return True
+        
+        return False
+
+    """evaluates the number of obstacles in the current position of character"""
     def getObstaclesAt(self, x, y, wrld):
         obstacles = 0
         
@@ -382,50 +385,31 @@ class TestCharacter(CharacterEntity):
         for xs in range(1, 5):
             # Get first obstacle on the right
             if self._withinBound(x + xs, y, wrld):
-                if wrld.wall_at(x + xs, y):
+                if wrld.wall_at(x + xs, y) or wrld.monsters_at(x + xs, y):
                     obstacles += 1
                     break
-                
-                if wrld.monsters_at(x + xs, y):
-                    obstacles += 1
-                    break
-                    
-        for xs in range(1, 5):
+            
             # Get first obstacle on the left
             if self._withinBound(x - xs, y, wrld):
-                if wrld.wall_at(x - xs, y):
+                if wrld.wall_at(x - xs, y) or wrld.monsters_at(x - xs, y):
                     obstacles += 1
                     break
-                
-                if wrld.monsters_at(x - xs, y):
-                    obstacles += 1
-                    break
-        
-        for ys in range(1, 5):
+
             # Get first obstacle at the top
             if self._withinBound(x, y + ys, wrld):
-                if wrld.wall_at(x, y + ys):
+                if wrld.wall_at(x, y + ys) or wrld.monsters_at(x, y + ys):
                     obstacles += 1
-                    break
-                
-                if wrld.monsters_at(x, y + ys):
-                    obstacles += 1
-                    break
-        
-        for ys in range(1, 5):
+                    break       
+
             # Get first obstacle at the bottom
             if self._withinBound(x, y - ys, wrld):
-                if wrld.wall_at(x, y - ys):
-                    obstacles += 1
-                    break
-                
-                if wrld.monsters_at(x, y - ys):
+                if wrld.wall_at(x, y - ys) or wrld.monsters_at(x, y - ys):
                     obstacles += 1
                     break
             
         return obstacles
 
-    # Wavefront for cost of each cell
+    #---------- WAVEFRONT ALGORITHM -----------#
     def init_wavefront(self, wrld):
         # initialize wavefront
         for x in range(wrld.width()):
@@ -439,7 +423,6 @@ class TestCharacter(CharacterEntity):
         #print("init:", self.wavefront)
 
     def populate_wavefront(self, wrld):
-        #print("enter populate")
         neighbors = []
         visited = []
         value = 100
@@ -451,7 +434,6 @@ class TestCharacter(CharacterEntity):
             visited.append(n[1])
 
         while neighbors:
-            #print("neighbors", neighbors)
             # grab first neighbor from list 
             curr_val, curr_coord = neighbors[0]
             visited.append(curr_coord)
@@ -495,75 +477,3 @@ class TestCharacter(CharacterEntity):
         
         # return all neighbors that aren't obstacles
         return neighbors
-
-
-class Node():
-    def __init__(self, parent, pos, g, h):
-        self.parent = parent  # for path
-        self.pos = pos  # position of the node
-        self.g = g  # how far from start
-        self.h = h  # manhatten distance to goal
-        self.f = g + h  # sum
-
-    # find neighbors and determine if they are open or if they are obstacle
-    def getNeighbors(self, gridCells, width, end, cost):
-        x = self.pos[0]
-        y = self.pos[1]
-
-        neighbors = []
-        # check for valid neighbors
-        neighbors.append(self._validate(x + 1, y, gridCells, width, end, cost))  
-        neighbors.append(self._validate(x - 1, y, gridCells, width, end, cost))
-        neighbors.append(self._validate(x, y + 1, gridCells, width, end, cost))
-        neighbors.append(self._validate(x, y - 1, gridCells, width, end, cost))
-        neighbors.append(self._validate(x + 1, y + 1, gridCells, width, end, cost))  
-        neighbors.append(self._validate(x + 1, y - 1, gridCells, width, end, cost))
-        neighbors.append(self._validate(x - 1, y + 1, gridCells, width, end, cost))
-        neighbors.append(self._validate(x - 1, y - 1, gridCells, width, end, cost))
-        
-        # return all neighbors that aren't obstacles
-        return neighbors  
-
-    # check if wall
-    def _validate(self, x, y, gridCells, width, end, cost):  
-        a =True
-        if(x >= 0 and x < gridCells.width() and y >= 0 and y <gridCells.height()):
-            if (not gridCells.wall_at(x,y)):  # convert from x,y to grid cell number
-                cellCost = 0
-                if (cellCost != 0):
-                    # creates new node using cost map
-                    return Node(self, (x, y), self.g + cellCost, heuristic((x, y), end))  
-                else:
-                    # create new node using default
-                    return Node(self, (x, y), self.g + 1, heuristic((x, y), end))  
-            else:
-           	    return None
-        else:
-            return None
-
-
-"""get the directions of a node and the next"""
-def findDir(currNode, nextNode):  
-    x = currNode[0]
-    y = currNode[1]
-    a = nextNode[0]
-    b = nextNode[1]
-
-    if (x + 1 == a and y == b):  
-        return (1, 0)
-    elif (x == a and y + 1 == b):  
-        return (0, 1)
-    elif (x - 1 == a and y == b):  
-        return (-1, 0)
-    elif (x == a and y - 1 == b):  
-        return (0, -1)
-    elif (x + 1 == a and y + 1 == b):  
-        return (1, 1)
-    elif (x + 1 == a and y - 1 == b):  
-        return (1, -1)
-    elif (x - 1 == a and y + 1 == b):  
-        return (-1, 1)
-    elif (x - 1 == a and y - 1 == b):  
-        return (-1, -1)
-    else:
-        return (0,0)
