@@ -192,7 +192,7 @@ class TestCharacter(CharacterEntity):
             score += -1000
         
         if self.surrounded(x, y, wrld) < 5:
-	        score += -300
+	        score += -500
         if self.surrounded(x, y, wrld) < 7:
 	        score += -100
         
