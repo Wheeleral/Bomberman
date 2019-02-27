@@ -10,9 +10,9 @@ import random
 from operator import itemgetter
 from sensed_world import SensedWorld
 
-# TODO: refactor
-# TODO: write the probability function to expect monster to move towards character
-# TODO: modify sensedworld so we're actually moving character
+# TODO: refactor 
+# TODO: write the probability function to expect monster to move towards character (ERIKA)
+# TODO: modify sensedworld so we're actually moving character (ALEX)
 # TODO: modify score function values
 
 class TestCharacter(CharacterEntity):			
