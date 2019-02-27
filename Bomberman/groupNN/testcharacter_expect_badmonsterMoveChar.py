@@ -110,10 +110,10 @@ class TestCharacter(CharacterEntity):
             action[0].next() # move the monster
             
             p = self.monster_prob(action[0], a, action[1])
-            
+            #print("monster action ", action, "prob", p)
             #p = 1/8
             # pass copied world with new monster loc and the old action for the character
-            v = v + (p * self.max_value(action[0], a, depth + 1)) 
+            v = v + ((p) * self.max_value(action[0], a, depth + 1)) 
         
         return v
 
@@ -137,12 +137,14 @@ class TestCharacter(CharacterEntity):
         # return all neighbors that aren't obstacles
         return successors
 
-    def find_monster(self, wrld):
+    def find_monster(self, wrld): ##TAKE IN MES DISTANCE
         count = 0
         monsters = []
         closest_m = None
         closest_dist = 0
-
+        me = wrld.me(self)
+        x = me.x
+        y = me.y
         # grab all monsters
         for x in range(wrld.width()):
             for y in range(wrld.height()):
@@ -155,9 +157,9 @@ class TestCharacter(CharacterEntity):
         for m in monsters:
             if (closest_m == None):
                 closest_m = m
-                closest_dist = sqrt((m[1][0] * m[1][0]) + (m[1][1] * m[1][1]))
+                closest_dist = sqrt((x - m[1][0])*(x - m[1][0]) + (y - m[1][1])*(y - m[1][1]))
             else:
-                dist = sqrt((m[1][0] * m[1][0]) + (m[1][1] * m[1][1]))
+                dist = sqrt((x - m[1][0])*(x - m[1][0]) + (y - m[1][1])*(y - m[1][1]))
                 if dist < closest_dist:
                     closest_m = m
                     closest_dist = dist
@@ -176,13 +178,13 @@ class TestCharacter(CharacterEntity):
             # start recursive search for best value
             cpyWrld = SensedWorld.from_world(s)
             me = cpyWrld.me(self)
-            print("ME", me, a[0], a[1])
+            #print("ME", me, a[0], a[1])
             me.x = a[0]
             me.y = a[1]
             #me.move(a[0] - me.x, a[1] - me.y )
-            print("SENSE" ,  me.x , " y" , me.y)
+            #print("SENSE" ,  me.x , " y" , me.y)
             v = max(v, self.exp_value(cpyWrld, a, current_depth + 1))
-            print("V", v)
+            print("V", v, " A", a)
             if v > best_value:
                 best_value = v 
                 best_action = a #tuple of x, y
@@ -216,8 +218,8 @@ class TestCharacter(CharacterEntity):
     def score_state(self, wrld, action):
         score = 0
         dist = 30 # dummy value for now
-        x = action[0]
-        y = action[1]
+        x = wrld.me(self).x #  action[0]
+        y = wrld.me(self).y #action[1]
 
         # at goal, give HUGE number
         # if within 2 spaces of monster, negative number
@@ -236,10 +238,10 @@ class TestCharacter(CharacterEntity):
 
 	    #Checking for monsters
         if self.nearMonster(x, y, wrld):
-	        score += -500
+	        score += -700
 		
         if self.nearMonster2(x, y, wrld):
-	        score += -400
+	        score += -600
 		
         if self.nearMonster3(x,y, wrld):
 	        score += -300
@@ -256,7 +258,7 @@ class TestCharacter(CharacterEntity):
         
         #Determine how long till bomb explodes
         if wrld.bomb_at(x,y) is not None:
-            if wrld.bomb_at(x,y).timer < 2:
+            if wrld.bomb_at(x,y).timer < 1:
                 score += -1000
         
         # Checking for explosion - avoid going towards it
