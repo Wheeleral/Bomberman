@@ -54,7 +54,6 @@ class TestCharacter(CharacterEntity):
         pass
 
     #---------- EXPECTIMAX SEARCH ----------#
-
     """checks if state is max depth"""
     def terminal_test(self, depth):
         if depth >= self.max_depth:
@@ -258,13 +257,13 @@ class TestCharacter(CharacterEntity):
         
         return closest_m
 
-	"""returns num of empty spaces nearby"""
+    """returns num of empty spaces nearby"""
     def surrounded(self, x, y, wrld):
         Nwalls = 0
         for xs in range (-1, 2, 1):
-	        for ys in range(-1,2 ,1 ):
+	        for ys in range(-1, 2 ,1 ):
 		        if(self._withinBound(x + xs, y + ys, wrld)):
-			        if(wrld.empty_at(x+xs, y+ ys)):
+			        if(wrld.empty_at(x+xs, y + ys)):
 				         Nwalls += 1
         return Nwalls
 
@@ -273,8 +272,16 @@ class TestCharacter(CharacterEntity):
         x = self.x 
         y = self.y
 
+        arr = [(x - 1, y - 1), (x, y - 1), (x + 1, y - 1),
+               (x - 1, y), (x, y), (x + 1, y),
+               (x - 1, y + 1), (x, y + 1), (x + 1, y + 1)]
+
         successors = []
         # check for valid neighbors
+        for elt in arr:
+            if self._validate(elt[0], elt[1], state):
+                successors.append((state, elt))
+        """
         if self._validate(x + 1, y, state):
             successors.append((state, (x + 1, y)))  
         if self._validate(x - 1, y, state):
@@ -293,6 +300,7 @@ class TestCharacter(CharacterEntity):
             successors.append((state, (x - 1, y - 1)))
         if self._validate(x, y, state):
             successors.append((state, (x, y)))
+        """
         
         # return all neighbors that aren't obstacles
         return successors
@@ -307,7 +315,7 @@ class TestCharacter(CharacterEntity):
         
         return False
 
-	"""checks if location is within one square of a monster"""
+    """checks if location is within one square of a monster"""
     def nearMonster(self, x, y, wrld):
         if(wrld.monsters_at(x+1, y) or wrld.monsters_at(x-1, y) or wrld.monsters_at(x, y+1) 
 		    or wrld.monsters_at(x, y-1) or wrld.monsters_at(x+1, y+1) or wrld.monsters_at(x+1, y-1) 
@@ -315,7 +323,7 @@ class TestCharacter(CharacterEntity):
 	        return True
         return False
 
-	"""checks if location is within two squares of a monster"""
+    """checks if location is within two squares of a monster"""
     def nearMonster2(self, x, y, wrld):
 	    if(wrld.monsters_at(x+2, y) or wrld.monsters_at(x-2, y) or wrld.monsters_at(x, y+2) 
 		    or wrld.monsters_at(x, y-2) or wrld.monsters_at(x+2, y+1) or wrld.monsters_at(x+2, y+2)
@@ -382,28 +390,28 @@ class TestCharacter(CharacterEntity):
         obstacles = 0
         
         # Determine the number of obstacles (hits) in the explosion range
-        for xs in range(1, 5):
+        for delta in range(1, 5):
             # Get first obstacle on the right
-            if self._withinBound(x + xs, y, wrld):
-                if wrld.wall_at(x + xs, y) or wrld.monsters_at(x + xs, y):
+            if self._withinBound(x + delta, y, wrld):
+                if wrld.wall_at(x + delta, y) or wrld.monsters_at(x + delta, y):
                     obstacles += 1
                     break
             
             # Get first obstacle on the left
-            if self._withinBound(x - xs, y, wrld):
-                if wrld.wall_at(x - xs, y) or wrld.monsters_at(x - xs, y):
+            if self._withinBound(x - delta, y, wrld):
+                if wrld.wall_at(x - delta, y) or wrld.monsters_at(x - delta, y):
                     obstacles += 1
                     break
 
             # Get first obstacle at the top
-            if self._withinBound(x, y + ys, wrld):
-                if wrld.wall_at(x, y + ys) or wrld.monsters_at(x, y + ys):
+            if self._withinBound(x, y + delta, wrld):
+                if wrld.wall_at(x, y + delta) or wrld.monsters_at(x, y + delta):
                     obstacles += 1
                     break       
 
             # Get first obstacle at the bottom
-            if self._withinBound(x, y - ys, wrld):
-                if wrld.wall_at(x, y - ys) or wrld.monsters_at(x, y - ys):
+            if self._withinBound(x, y - delta, wrld):
+                if wrld.wall_at(x, y - delta) or wrld.monsters_at(x, y - delta):
                     obstacles += 1
                     break
             
