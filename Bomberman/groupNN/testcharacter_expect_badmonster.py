@@ -22,7 +22,6 @@ class TestCharacter(CharacterEntity):
     max_depth = 2 # need to figure out how to set this
     wavefront = [] # 2d array for grid
     explosion = False
-    #explosion = 0
     time_explode = 0
 
     def do(self, wrld):
@@ -61,7 +60,6 @@ class TestCharacter(CharacterEntity):
         for x in range(wrld.width()):
             for y in range(wrld.height()):
                 if wrld.explosion_at(x, y):
-                    #self.populate_wavefront(wrld)
                     return True
         
         return False
@@ -75,10 +73,9 @@ class TestCharacter(CharacterEntity):
         return False
 
     """returns a utility value"""
-    def max_value(self, state, a, depth, monster_loc):
-        #print("monster location in copyWrld:", monster_loc)
+    def max_value(self, state, a, depth):
         if self.terminal_test(depth):
-            return self.score_state(state, a)  # need to write this function
+            return self.score_state(state, a)  
         
         v = -inf
         for action in self.get_successors(state):  
@@ -93,9 +90,16 @@ class TestCharacter(CharacterEntity):
             return self.score_state(state, a)  
         
         v = 0
+
         # find closest monster
         closest_monster = self.find_monster(state)
         #print("monster loc:", closest_monster[1])
+
+        # if monster no longer exists 
+        if not closest_monster:
+            v = v + (self.max_value(state, a, depth + 1)) 
+
+            return v
      
         # get successors of that monster in copied worlds
         monster_actions = self.get_monster_actions(state, closest_monster[1])
@@ -104,65 +108,31 @@ class TestCharacter(CharacterEntity):
         for action in monster_actions: 
             #p = self.monster_prob(action[0], action[1]) # this doesn't account for the monster movement
             action[0].next() # move the monster
-            p = 1/8
+            
+            p = self.monster_prob(action[0], a, action[1])
+            
+            #p = 1/8
             # pass copied world with new monster loc and the old action for the character
-            v = v + (p * self.max_value(action[0], a, depth + 1, action[1])) 
+            v = v + (p * self.max_value(action[0], a, depth + 1)) 
         
         return v
 
     def get_monster_actions(self, wrld, loc):
         x, y = loc  
+        arr = [(x - 1, y - 1), (x, y - 1), (x + 1, y - 1),
+               (x - 1, y), (x + 1, y),
+               (x - 1, y + 1), (x, y + 1), (x + 1, y + 1)]
+
         successors = []
         # check for valid neighbors
-        if self._validate(x + 1, y, wrld):
-            # copy the world so we can move the monster
-            cpyWrld = SensedWorld.from_world(wrld)
-            monster = cpyWrld.monsters_at(x, y)[0]
-            monster.move(x + 1, y)
+        for elt in arr:
+            if self._validate(elt[0], elt[1], wrld):
+                # copy the world so we can move the monster
+                cpyWrld = SensedWorld.from_world(wrld)
+                monster = cpyWrld.monsters_at(x, y)[0]
+                monster.move(elt[0], elt[1])
 
-            successors.append((cpyWrld, (x + 1, y)))  
-        if self._validate(x - 1, y, wrld):
-            cpyWrld = SensedWorld.from_world(wrld)
-            monster = cpyWrld.monsters_at(x, y)[0]
-            monster.move(x - 1, y)
-
-            successors.append((cpyWrld, (x - 1, y)))
-        if self._validate(x, y + 1, wrld):
-            cpyWrld = SensedWorld.from_world(wrld)
-            monster = cpyWrld.monsters_at(x, y)[0]
-            monster.move(x, y + 1)
-
-            successors.append((cpyWrld, (x, y + 1)))
-        if self._validate(x, y - 1, wrld):
-            cpyWrld = SensedWorld.from_world(wrld)
-            monster = cpyWrld.monsters_at(x, y)[0]
-            monster.move(x, y - 1)
-
-            successors.append((cpyWrld, (x, y - 1)))
-        if self._validate(x + 1, y + 1, wrld):
-            cpyWrld = SensedWorld.from_world(wrld)
-            monster = cpyWrld.monsters_at(x, y)[0]
-            monster.move(x + 1, y + 1)
-
-            successors.append((cpyWrld, (x + 1, y + 1)))
-        if self._validate(x + 1, y - 1, wrld):
-            cpyWrld = SensedWorld.from_world(wrld)
-            monster = cpyWrld.monsters_at(x, y)[0]
-            monster.move(x + 1, y - 1)
-
-            successors.append((cpyWrld, (x + 1, y - 1)))
-        if self._validate(x - 1, y + 1, wrld):
-            cpyWrld = SensedWorld.from_world(wrld)
-            monster = cpyWrld.monsters_at(x, y)[0]
-            monster.move(x - 1, y + 1)
-
-            successors.append((cpyWrld, (x - 1, y + 1)))
-        if self._validate(x - 1, y - 1, wrld):
-            cpyWrld = SensedWorld.from_world(wrld)
-            monster = cpyWrld.monsters_at(x, y)[0]
-            monster.move(x - 1, y - 1)
-
-            successors.append((cpyWrld, (x - 1, y - 1)))
+                successors.append((cpyWrld, elt))
         
         # return all neighbors that aren't obstacles
         return successors
@@ -216,14 +186,22 @@ class TestCharacter(CharacterEntity):
 
         return best_action 
 
-    #TODO: write function
+    #TODO: write function for smart monster
     """return the most likely move for monster"""
-    def monster_prob(self, wrld, action):
-        char_x = action[0]
-        char_y = action[1]
+    def monster_prob(self, wrld, char_loc, monster_loc):
+        cx, cy = char_loc
+        mx, my = monster_loc
 
-        # monster will chase character
-        return 1/9
+        # find distance between character and closest monster
+        dx = abs(mx - cx)
+        dy = abs(my - cy)
+        euclidean = sqrt((dx * dx) + (dy * dy))
+
+        print("char_loc:", char_loc, "monster_loc:", monster_loc, "weight:", 1/euclidean)
+
+        # monster will probably chase character, therefore, higher weight goes to actions
+        # that move monster closer to character
+        return 1/euclidean
 
     """return a score for a world"""
     def score_state(self, wrld, action):
