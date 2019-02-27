@@ -281,26 +281,6 @@ class TestCharacter(CharacterEntity):
         for elt in arr:
             if self._validate(elt[0], elt[1], state):
                 successors.append((state, elt))
-        """
-        if self._validate(x + 1, y, state):
-            successors.append((state, (x + 1, y)))  
-        if self._validate(x - 1, y, state):
-            successors.append((state, (x - 1, y)))
-        if self._validate(x, y + 1, state):
-            successors.append((state, (x, y + 1)))
-        if self._validate(x, y - 1, state):
-            successors.append((state, (x, y - 1)))
-        if self._validate(x + 1, y + 1, state):
-            successors.append((state, (x + 1, y + 1)))
-        if self._validate(x + 1, y - 1, state):
-            successors.append((state, (x + 1, y - 1)))
-        if self._validate(x - 1, y + 1, state):
-            successors.append((state, (x - 1, y + 1)))
-        if self._validate(x - 1, y - 1, state):
-            successors.append((state, (x - 1, y - 1)))
-        if self._validate(x, y, state):
-            successors.append((state, (x, y)))
-        """
         
         # return all neighbors that aren't obstacles
         return successors
@@ -463,8 +443,16 @@ class TestCharacter(CharacterEntity):
             neighbors.remove(neighbors[0])
 
     def get_neighbors(self, x, y, value, state):
+        arr = [(x - 1, y - 1), (x, y - 1), (x + 1, y - 1),
+               (x - 1, y), (x + 1, y),
+               (x - 1, y + 1), (x, y + 1), (x + 1, y + 1)]
         # list of tuples containing the value and a tuple of the coordinates
         neighbors = []
+
+        for elt in arr:
+            if self._withinBound(elt[0], elt[1], state):
+                neighbors.append((value, elt))
+        """
         # check for valid neighbors
         if self._withinBound(x + 1, y, state):
             neighbors.append((value, (x + 1, y)))  
@@ -482,6 +470,7 @@ class TestCharacter(CharacterEntity):
             neighbors.append((value, (x - 1, y + 1)))
         if self._withinBound(x - 1, y - 1, state):
             neighbors.append((value, (x - 1, y - 1)))
+        """
         
         # return all neighbors that aren't obstacles
         return neighbors
