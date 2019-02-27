@@ -181,6 +181,9 @@ class TestCharacter(CharacterEntity):
         if self.nearMonster3(x,y, wrld):
 	        score += -300
 
+        if self.nearMonster4(x,y, wrld):
+	        score += -100
+
         if wrld.monsters_at(x,y):
             score += -1000
         if self.surrounded(x, y, wrld) < 3:
@@ -193,7 +196,7 @@ class TestCharacter(CharacterEntity):
         
         #Determine how long till bomb explodes
         if wrld.bomb_at(x,y) is not None:
-            if wrld.bomb_at(x,y).timer < 1:
+            if wrld.bomb_at(x,y).timer < 2:
                 score += -1000
         
         # Checking for explosion - avoid going towards it
@@ -322,7 +325,13 @@ class TestCharacter(CharacterEntity):
 			        if(wrld.monsters_at(x+xs, y+ ys)):
 				        return True
         return False
-
+    def nearMonster4(self, x, y, wrld):
+        for xs in range (-4, 5, 1):
+	        for ys in range(-4,5 ,1 ):
+		        if(self._withinBound(x + xs, y + ys, wrld)):
+			        if(wrld.monsters_at(x+xs, y+ ys)):
+				        return True
+        return False
     """returns the distance from bomb if location is within the range of explosion"""
     def nearBomb(self, x, y, wrld):
         bomb_distance = []
