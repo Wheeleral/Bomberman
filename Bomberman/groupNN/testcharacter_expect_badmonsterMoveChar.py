@@ -68,7 +68,12 @@ class TestCharacter(CharacterEntity):
         
         v = -inf
         for action in self.get_successors(state):  
-            v = max(v, self.exp_value(action[0], action[1], depth + 1))
+            cpyWrld = SensedWorld.from_world(action[0])
+            me = cpyWrld.me(self)
+            #print("ME", me, a[0], a[1])
+            me.x = action[1][0]
+            me.y = action[1][1] 
+            v = max(v, self.exp_value(cpyWrld, action[1], depth + 1))
         
         return v
 
