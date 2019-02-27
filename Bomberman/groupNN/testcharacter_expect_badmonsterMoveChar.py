@@ -10,7 +10,6 @@ import random
 from operator import itemgetter
 from sensed_world import SensedWorld
 
-# TODO: refactor 
 # TODO: modify score function values
 
 class TestCharacter(CharacterEntity):			
@@ -62,9 +61,9 @@ class TestCharacter(CharacterEntity):
         return False
 
     """returns a utility value"""
-    def max_value(self, state, a, depth):
+    def max_value(self, wrld, a, depth):
         if self.terminal_test(depth):
-            return self.score_state(state, a)  
+            return self.score_state(wrld, a)  
         
         v = -inf
         for action in self.get_successors(state):  
@@ -79,22 +78,22 @@ class TestCharacter(CharacterEntity):
 
     """returns a utility value"""
     """THIS IS HOW THE MONSTER MOVES"""
-    def exp_value(self, state, a, depth):
+    def exp_value(self, wrld, a, depth):
         if self.terminal_test(depth):
-            return self.score_state(state, a)  
+            return self.score_state(wrld, a)  
         
         v = 0
-        closest_monster = self.find_monster(state)
+        closest_monster = self.find_monster(wrld)
         #print("monster loc:", closest_monster[1])
 
         # if monster no longer exists 
         if not closest_monster:
-            v = v + (self.max_value(state, a, depth + 1)) 
+            v = v + (self.max_value(wrld, a, depth + 1)) 
 
             return v
      
         # get successors of that monster in copied worlds
-        monster_actions = self.get_monster_actions(state, closest_monster[1])
+        monster_actions = self.get_monster_actions(wrld, closest_monster[1])
         
         for action in monster_actions: 
             action[0].next() # move the monster
@@ -108,14 +107,14 @@ class TestCharacter(CharacterEntity):
         return v
 
     """expectimax search"""
-    def search(self, state, max_depth):
+    def search(self, wrld, max_depth):
         current_depth = 0
         best_value = -inf
         best_action = None
         v = -inf
 
         # grab the board and column for each successor
-        for s, a in self.get_successors(state):  # need to define this
+        for s, a in self.get_successors(wrld):  # need to define this
             # start recursive search for best value
             cpyWrld = SensedWorld.from_world(s)
             me = cpyWrld.me(self)
@@ -183,18 +182,20 @@ class TestCharacter(CharacterEntity):
         if self.nearMonster2(x, y, wrld):
 	        score += -600
 		
-        if self.nearMonster3(x,y, wrld):
+        if self.nearMonster3(x, y, wrld):
 	        score += -300
 
-        if self.nearMonster4(x,y, wrld):
+        if self.nearMonster4(x, y, wrld):
 	        score += -100
 
-        if wrld.monsters_at(x,y):
+        if wrld.monsters_at(x, y):
             score += -1000
+        
         if self.surrounded(x, y, wrld) < 3:
 	        score += -50
+        
         # Checking whether within explosion range
-        if self.nearBomb(x,y,wrld) > 0:
+        if self.nearBomb(x, y, wrld) > 0:
             # Determine how negative based on how close the character is to the bomb
             #print("bomb value of ", x, " and ", y , "score", -(2 / self.nearBomb(x,y,wrld)) * 100 )
             score += -(2 / self.nearBomb(x,y,wrld)) * 500
@@ -276,7 +277,7 @@ class TestCharacter(CharacterEntity):
         return Nwalls
 
     """returns a list of possible character actions from current character position"""
-    def get_successors(self, state):
+    def get_successors(self, wrld):
         x = self.x 
         y = self.y
 
@@ -287,28 +288,8 @@ class TestCharacter(CharacterEntity):
         successors = []
         # check for valid neighbors
         for elt in arr:
-            if self._validate(elt[0], elt[1], state):
-                successors.append((state, elt))
-        """
-        if self._validate(x + 1, y, state):
-            successors.append((state, (x + 1, y)))  
-        if self._validate(x - 1, y, state):
-            successors.append((state, (x - 1, y)))
-        if self._validate(x, y + 1, state):
-            successors.append((state, (x, y + 1)))
-        if self._validate(x, y - 1, state):
-            successors.append((state, (x, y - 1)))
-        if self._validate(x + 1, y + 1, state):
-            successors.append((state, (x + 1, y + 1)))
-        if self._validate(x + 1, y - 1, state):
-            successors.append((state, (x + 1, y - 1)))
-        if self._validate(x - 1, y + 1, state):
-            successors.append((state, (x - 1, y + 1)))
-        if self._validate(x - 1, y - 1, state):
-            successors.append((state, (x - 1, y - 1)))
-        if self._validate(x, y, state):
-            successors.append((state, (x, y)))
-        """
+            if self._validate(elt[0], elt[1], wrld):
+                successors.append((wrld, elt))
         
         # return all neighbors that aren't obstacles
         return successors
@@ -350,6 +331,8 @@ class TestCharacter(CharacterEntity):
 			        if(wrld.monsters_at(x+xs, y+ ys)):
 				        return True
         return False
+    
+    """checks if location is within four squares of a monster"""
     def nearMonster4(self, x, y, wrld):
         for xs in range (-4, 5, 1):
 	        for ys in range(-4,5 ,1 ):
@@ -357,6 +340,7 @@ class TestCharacter(CharacterEntity):
 			        if(wrld.monsters_at(x+xs, y+ ys)):
 				        return True
         return False
+    
     """returns the distance from bomb if location is within the range of explosion"""
     def nearBomb(self, x, y, wrld):
         bomb_distance = []
@@ -476,26 +460,18 @@ class TestCharacter(CharacterEntity):
             # remove from list
             neighbors.remove(neighbors[0])
 
-    def get_neighbors(self, x, y, value, state):
+    def get_neighbors(self, x, y, value, wrld):
+        arr = [(x + 1, y), (x - 1, y), 
+               (x, y + 1), (x, y - 1), 
+               (x + 1, y + 1), (x + 1, y - 1), 
+               (x - 1, y + 1), (x - 1, y - 1)]
+
         # list of tuples containing the value and a tuple of the coordinates
         neighbors = []
-        # check for valid neighbors
-        if self._withinBound(x + 1, y, state):
-            neighbors.append((value, (x + 1, y)))  
-        if self._withinBound(x - 1, y, state):
-            neighbors.append((value, (x - 1, y)))
-        if self._withinBound(x, y + 1, state):
-            neighbors.append((value, (x, y + 1)))
-        if self._withinBound(x, y - 1, state):
-            neighbors.append((value, (x, y - 1)))
-        if self._withinBound(x + 1, y + 1, state):
-            neighbors.append((value, (x + 1, y + 1)))
-        if self._withinBound(x + 1, y - 1, state):
-            neighbors.append((value, (x + 1, y - 1)))
-        if self._withinBound(x - 1, y + 1, state):
-            neighbors.append((value, (x - 1, y + 1)))
-        if self._withinBound(x - 1, y - 1, state):
-            neighbors.append((value, (x - 1, y - 1)))
-        
+
+        for elt in arr:
+            if self._withinBound(elt[0], elt[1], wrld):
+                neighbors.append((value, elt))
+
         # return all neighbors that aren't obstacles
         return neighbors
