@@ -325,6 +325,8 @@ class TestCharacter(CharacterEntity):
 			        if(wrld.monsters_at(x+xs, y+ ys)):
 				        return True
         return False
+    
+    """checks if location is within four squares of a monster"""
     def nearMonster4(self, x, y, wrld):
         for xs in range (-4, 5, 1):
 	        for ys in range(-4,5 ,1 ):
@@ -332,6 +334,7 @@ class TestCharacter(CharacterEntity):
 			        if(wrld.monsters_at(x+xs, y+ ys)):
 				        return True
         return False
+    
     """returns the distance from bomb if location is within the range of explosion"""
     def nearBomb(self, x, y, wrld):
         bomb_distance = []
@@ -452,34 +455,17 @@ class TestCharacter(CharacterEntity):
             neighbors.remove(neighbors[0])
 
     def get_neighbors(self, x, y, value, state):
-        arr = [(x - 1, y - 1), (x, y - 1), (x + 1, y - 1),
-               (x - 1, y), (x + 1, y),
-               (x - 1, y + 1), (x, y + 1), (x + 1, y + 1)]
+        arr = [(x + 1, y), (x - 1, y), 
+               (x, y + 1), (x, y - 1), 
+               (x + 1, y + 1), (x + 1, y - 1), 
+               (x - 1, y + 1), (x - 1, y - 1)]
+               
         # list of tuples containing the value and a tuple of the coordinates
         neighbors = []
 
         for elt in arr:
             if self._withinBound(elt[0], elt[1], state):
                 neighbors.append((value, elt))
-        """
-        # check for valid neighbors
-        if self._withinBound(x + 1, y, state):
-            neighbors.append((value, (x + 1, y)))  
-        if self._withinBound(x - 1, y, state):
-            neighbors.append((value, (x - 1, y)))
-        if self._withinBound(x, y + 1, state):
-            neighbors.append((value, (x, y + 1)))
-        if self._withinBound(x, y - 1, state):
-            neighbors.append((value, (x, y - 1)))
-        if self._withinBound(x + 1, y + 1, state):
-            neighbors.append((value, (x + 1, y + 1)))
-        if self._withinBound(x + 1, y - 1, state):
-            neighbors.append((value, (x + 1, y - 1)))
-        if self._withinBound(x - 1, y + 1, state):
-            neighbors.append((value, (x - 1, y + 1)))
-        if self._withinBound(x - 1, y - 1, state):
-            neighbors.append((value, (x - 1, y - 1)))
-        """
-        
+
         # return all neighbors that aren't obstacles
         return neighbors
