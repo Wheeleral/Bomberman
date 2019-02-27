@@ -174,7 +174,14 @@ class TestCharacter(CharacterEntity):
         # grab the board and column for each successor
         for s, a in self.get_successors(state):  # need to define this
             # start recursive search for best value
-            v = max(v, self.exp_value(s, a, current_depth + 1))
+            cpyWrld = SensedWorld.from_world(s)
+            me = cpyWrld.me(self)
+            print("ME", me, a[0], a[1])
+            me.x = a[0]
+            me.y = a[1]
+            #me.move(a[0] - me.x, a[1] - me.y )
+            print("SENSE" ,  me.x , " y" , me.y)
+            v = max(v, self.exp_value(cpyWrld, a, current_depth + 1))
             print("V", v)
             if v > best_value:
                 best_value = v 
