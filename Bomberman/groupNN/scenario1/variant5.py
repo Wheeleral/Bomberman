@@ -11,10 +11,11 @@ from monsters.selfpreserving_monster import SelfPreservingMonster
 
 # TODO This is your code!
 sys.path.insert(1, '../groupNN')
-from testcharacter_scene2_wavefudge4 import TestCharacter
 
+#from testcharacter_scene2_wavefudge4 import TestCharacter
+from testcharacter_expect_badmonsterMoveCharimport TestCharacter #~70%
 # Create the game
-random.seed(123) # TODO Change this if you want different random choices
+random.seed(125) # TODO Change this if you want different random choices
 g = Game.fromfile('map.txt')
 g.add_monster(StupidMonster("monster", # name
                             "S",       # avatar
@@ -33,4 +34,4 @@ g.add_character(TestCharacter("me", # name
 ))
 
 # Run!
-g.go()
+g.go(1)

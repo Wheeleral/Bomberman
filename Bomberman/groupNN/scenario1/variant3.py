@@ -10,7 +10,7 @@ from monsters.selfpreserving_monster import SelfPreservingMonster
 
 # TODO This is your code!
 sys.path.insert(1, '../groupNN')
-from testcharacter_expect_badmonster import TestCharacter
+from testcharacter_expect_badmonsterMoveCharScen2v3 import TestCharacter #80%
 
 # Create the game
 random.seed(123) # TODO Change this if you want different random choices
@@ -28,4 +28,4 @@ g.add_character(TestCharacter("me", # name
 ))
 
 # Run!
-g.go()
+g.go(1)

@@ -152,7 +152,7 @@ class TestCharacter(CharacterEntity):
         # that move monster closer to character
         if(euclidean == 0):
 	        return 1
-        return 1 / euclidean
+        return 2 / euclidean
 
     """returns a score for a world"""
     def score_state(self, wrld, action):
@@ -170,7 +170,6 @@ class TestCharacter(CharacterEntity):
         # higher number as we near the goal
 
         # nearing the goal:
-        score += 35 * self.wavefront[x][y]
 
         # at goal:
         if wrld.exit_at(x, y):
@@ -207,27 +206,31 @@ class TestCharacter(CharacterEntity):
                 if(closest_monster[1] <= 7.9):
                     score += -80
                 if(closest_monster[1] <= 6.5):
-                    score += -760
+                    score += -620
                 if(closest_monster[1] <= 5.5):
-                    score += -900
+                    score += -800
                 if(closest_monster[1] <= 4.5):
                     #print("lower")
-                    score += -1000
+                    score += -1100
                 if(closest_monster[1] <= 3.5):
-                    score += -1500
+                    score += -1400
                 if(closest_monster[1] <= 2.5):
                     score += -10000
             else: score += (1 / closest_monster[1]) * -2000
 		     
+        if closest_monster[1]:
+            score += 25 * self.wavefront[x][y]
+        else :
+            score += 50*self.wavefront[x][y]
 
 
         if wrld.monsters_at(x, y):
             score += -1000
         
         if self.surrounded(x, y, wrld) < 5:#corners
-	        score += -570
+	        score += -970
         if self.surrounded(x, y, wrld) < 7: #sides
-	        score += -250
+	        score += -150
 	
         # Checking whether within explosion range
         if self.nearBomb(x, y, wrld) > 0:
@@ -235,7 +238,7 @@ class TestCharacter(CharacterEntity):
             # bomb
             #print("bomb value of ", x, " and ", y , "score", -(2 /
             #self.nearBomb(x,y,wrld)) * 100 )
-            score += -(5 / self.nearBomb(x,y,wrld)) * 500
+            score += -(5 / self.nearBomb(x,y,wrld)) * 800
         
         #Determine how long till bomb explodes
         if wrld.bomb_at(x,y) is not None:

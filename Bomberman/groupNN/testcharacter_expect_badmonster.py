@@ -139,6 +139,10 @@ class TestCharacter(CharacterEntity):
         monsters = []
         closest_m = None
         closest_dist = 0
+        me = SensedWorld.me(self)
+        x = me.x
+        y = me.y
+
 
         # grab all monsters
         for x in range(wrld.width()):
@@ -152,9 +156,9 @@ class TestCharacter(CharacterEntity):
         for m in monsters:
             if (closest_m == None):
                 closest_m = m
-                closest_dist = sqrt((m[1][0] * m[1][0]) + (m[1][1] * m[1][1]))
+                closest_dist = sqrt((x - m[1][0])*(x - m[1][0]) + (y - m[1][1])*(y - m[1][1]))
             else:
-                dist = sqrt((m[1][0] * m[1][0]) + (m[1][1] * m[1][1]))
+                dist = sqrt((x - m[1][0])*(x - m[1][0]) + (y - m[1][1])*(y - m[1][1]))
                 if dist < closest_dist:
                     closest_m = m
                     closest_dist = dist

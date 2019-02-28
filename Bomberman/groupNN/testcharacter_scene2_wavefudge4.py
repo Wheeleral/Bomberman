@@ -20,12 +20,12 @@ class TestCharacter(CharacterEntity):
     time_explode = 0
 
     def do(self, wrld):
-        print("time:", self.time_explode)
+        #print("time:", self.time_explode)
         if self.wavefront == []:
             self.wavefront = [[0] * wrld.height() for i in range(wrld.width())]
             self.init_wavefront(wrld)
             self.populate_wavefront(wrld)
-            print("wavefront: ", self.wavefront)
+            #print("wavefront: ", self.wavefront)
         # character will always be near explosion
         #if self.explosion_near(self.x, self.y, wrld):
         #    self.populate_wavefront(wrld) # rerun wavefront when a wall dies
@@ -34,10 +34,10 @@ class TestCharacter(CharacterEntity):
             self.populate_wavefront(wrld)
             self.explosion = False
             self.time_explode = 0
-            print("wavefront: ", self.wavefront)
+            #print("wavefront: ", self.wavefront)
                  
         action= self.search(wrld, self.max_depth)
-        print("Taking ", action)
+        #print("Taking ", action)
         dx = action[0] - self.x
         dy = action[1] - self.y
         self.move(dx, dy)
@@ -154,7 +154,7 @@ class TestCharacter(CharacterEntity):
         # higher number as we near the goal
 
         # nearing the goal:
-        score += self.wavefront[x][y]
+        score += 10*self.wavefront[x][y]
 
         # at goal:
         if wrld.exit_at(x, y):
@@ -176,12 +176,14 @@ class TestCharacter(CharacterEntity):
 
         if wrld.monsters_at(x,y):
             score += -1000
-        if self.surrounded(x, y, wrld) < 3:
+        if self.surrounded(x, y, wrld) < 4:
+	        score += -200
+        if self.surrounded(x, y, wrld) < 7:
 	        score += -50
         # Checking whether within explosion range
         if self.nearBomb(x,y,wrld) > 0:
             # Determine how negative based on how close the character is to the bomb
-            print("bomb value of ", x, " and ", y , "score", -(2 / self.nearBomb(x,y,wrld)) * 100 )
+            #print("bomb value of ", x, " and ", y , "score", -(2 / self.nearBomb(x,y,wrld)) * 100 )
             score += -(2 / self.nearBomb(x,y,wrld)) * 500
         
         #Determine how long till bomb explodes
@@ -192,7 +194,7 @@ class TestCharacter(CharacterEntity):
         # Checking for explosion - avoid going towards it
         if wrld.explosion_at(x, y) is not None:
             score += -1000
-        print("score ", score, " a ", action)
+        #print("score ", score, " a ", action)
         return score
 
     """ return a list of possible actions from current character position"""

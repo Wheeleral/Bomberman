@@ -205,16 +205,16 @@ class TestCharacter(CharacterEntity):
             if(closest_monster[1] <=7.9):
                 #print("its lower")
                 if(closest_monster[1] <= 7.9):
-                    score += -80
+                    score += -100
                 if(closest_monster[1] <= 6.5):
-                    score += -760
+                    score += -660
                 if(closest_monster[1] <= 5.5):
                     score += -900
                 if(closest_monster[1] <= 4.5):
                     #print("lower")
-                    score += -1000
+                    score += -1100
                 if(closest_monster[1] <= 3.5):
-                    score += -1500
+                    score += -1400
                 if(closest_monster[1] <= 2.5):
                     score += -10000
             else: score += (1 / closest_monster[1]) * -2000
@@ -227,7 +227,7 @@ class TestCharacter(CharacterEntity):
         if self.surrounded(x, y, wrld) < 5:#corners
 	        score += -570
         if self.surrounded(x, y, wrld) < 7: #sides
-	        score += -250
+	        score += -150
 	
         # Checking whether within explosion range
         if self.nearBomb(x, y, wrld) > 0:

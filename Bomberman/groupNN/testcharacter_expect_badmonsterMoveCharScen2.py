@@ -207,14 +207,14 @@ class TestCharacter(CharacterEntity):
                 if(closest_monster[1] <= 7.9):
                     score += -80
                 if(closest_monster[1] <= 6.5):
-                    score += -760
+                    score += -460
                 if(closest_monster[1] <= 5.5):
-                    score += -900
+                    score += -700
                 if(closest_monster[1] <= 4.5):
                     #print("lower")
-                    score += -1000
+                    score += -800
                 if(closest_monster[1] <= 3.5):
-                    score += -1500
+                    score += -1200
                 if(closest_monster[1] <= 2.5):
                     score += -10000
             else: score += (1 / closest_monster[1]) * -2000
