@@ -47,7 +47,7 @@ class TestCharacter(CharacterEntity):
         # Determine whether or not to place a bomb
         # FOR NOW: >0 and >1 passes variant5
         #if self.getObstaclesAt(self.x, self.y, wrld) > 0:
-        #    self.place_bomb()
+            #self.place_bomb()
         self.place_bomb()
         pass
 
@@ -156,6 +156,9 @@ class TestCharacter(CharacterEntity):
 
     """returns a score for a world"""
     def score_state(self, wrld, action):
+        x = action[0]
+        y = action[1]
+        '''
         score = 0
         dist = 30 # dummy value for now
         x = action[0]
@@ -248,6 +251,71 @@ class TestCharacter(CharacterEntity):
         #print("score ", score, " a ", action)
         #print("Score is " , score)
         return score
+        '''
+        # Distance analysis to GOAL
+        dist_to_goal = 0;
+        
+        # Environment analysis
+        score = 0
+        
+        # at goal:
+        if wrld.exit_at(x, y):
+            print("at exit")
+            return 100
+        
+        # nearing the goal:
+        dist_to_goal = self.wavefront[x][y]
+        
+        # distance from closest monster
+        closest_monster = self.find_monster(wrld ,(x,y))
+
+        # if there is a monster
+        if closest_monster[1]:
+            if (closest_monster[1] > 0):
+                score += 0.70 * ((1 -(1 / closest_monster[1])) * 100)
+        else: score += 70   #No monster - no contribution (change) to score
+        
+        bomb_distance = self.nearBomb(x, y, wrld)
+        
+        # Checking whether within explosion range
+        if bomb_distance > 0:
+            # Determine how negative based on how close the character is to the
+            # bomb
+            #print("bomb value of ", x, " and ", y , "score", -(2 /
+            #self.nearBomb(x,y,wrld)) * 100 )
+            score += 0.02 * ((1 -(1 / self.nearBomb(x,y,wrld))) * 100)
+        else:
+            score += 2 # At the bomb position - depends on timer below
+            
+        #Determine how long till bomb explodes
+        if wrld.bomb_at(x,y) is not None:
+            if wrld.bomb_at(x,y).timer > 0:
+                score += 0.08 * ((1 - (1 / wrld.bomb_at(x,y).timer)) * 100)
+        else: #No bomb
+            score += 8
+        
+        # Checking for explosion - avoid going towards it
+        if wrld.explosion_at(x, y) is not None:
+            score += 0
+        else: # No explosion
+            score += 10
+        
+        # Environment
+        if self.surrounded(x, y, wrld) < 5:#corners
+            score += 0
+        else:
+            score += 5
+            
+        if self.surrounded(x, y, wrld) < 7: #sides
+            score += 0
+        else:
+            score += 5
+        
+        
+        overall_score = (0.05 * dist_to_goal) + (0.95 * score)
+        
+        print(overall_score, "for position", action)
+        return overall_score
 
     #---------- EXPECTIMAX HELPERS ----------#
     """returns a list of possible monster actions from current monster position"""
