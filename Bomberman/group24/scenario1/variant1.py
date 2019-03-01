@@ -7,8 +7,8 @@ sys.path.insert(1, '..')
 from game import Game
 
 # TODO This is your code!
-sys.path.insert(1, '../groupNN')
-from testcharacter_scene2_wave import TestCharacter
+sys.path.insert(1, '../group24')
+from testcharacter_expect_badmonsterMoveChar import TestCharacter
 
 
 # Create the game
@@ -21,4 +21,4 @@ g.add_character(TestCharacter("me", # name
 ))
 
 # Run!
-g.go()
+g.go(1)
