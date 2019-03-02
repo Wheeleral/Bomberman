@@ -272,8 +272,8 @@ class TestCharacter(CharacterEntity):
         # if there is a monster
         if closest_monster[1]:
             if (closest_monster[1] > 0):
-                score += 0.70 * ((1 -(1 / closest_monster[1])) * 100)
-        else: score += 70   #No monster - no contribution (change) to score
+                score += 0.60 * ((1 - (1 / closest_monster[1])) * 100)
+        else: score += 60   #No monster - no contribution (change) to score
         
         bomb_distance = self.nearBomb(x, y, wrld)
         
@@ -283,36 +283,33 @@ class TestCharacter(CharacterEntity):
             # bomb
             #print("bomb value of ", x, " and ", y , "score", -(2 /
             #self.nearBomb(x,y,wrld)) * 100 )
-            score += 0.02 * ((1 -(1 / self.nearBomb(x,y,wrld))) * 100)
+            score += 0.05 * ((1 -(1 / self.nearBomb(x,y,wrld))) * 100)
         else:
-            score += 2 # At the bomb position - depends on timer below
+            score += 5 # At the bomb position - depends on timer below
             
         #Determine how long till bomb explodes
         if wrld.bomb_at(x,y) is not None:
             if wrld.bomb_at(x,y).timer > 0:
-                score += 0.08 * ((1 - (1 / wrld.bomb_at(x,y).timer)) * 100)
+                score += 0.15 * ((1 - (1 / wrld.bomb_at(x,y).timer)) * 100)
         else: #No bomb
-            score += 8
+            score += 15
         
         # Checking for explosion - avoid going towards it
         if wrld.explosion_at(x, y) is not None:
             score += 0
         else: # No explosion
-            score += 10
+            score += 15
         
-        # Environment
-        if self.surrounded(x, y, wrld) < 5:#corners
-            score += 0
-        else:
+        # Environment - return the number of empty spaces nearby
+        num_empty_cells = self.surrounded(x, y, wrld)
+        
+        if num_empty_cells > 7: #corners and sides
             score += 5
-            
-        if self.surrounded(x, y, wrld) < 7: #sides
-            score += 0
-        else:
-            score += 5
+        elif num_empty_cells > 0 and num_empty_cells < 7:
+            score += 0.05 * ((1 - (1 / num_empty_cells)) * 100)
         
-        
-        overall_score = (0.05 * dist_to_goal) + (0.95 * score)
+        #overall_score = (0.30 * dist_to_goal) + (0.70 * score)
+        overall_score = 0.35 * dist_to_goal + (score - (dist_to_goal));
         
         print(overall_score, "for position", action)
         return overall_score
