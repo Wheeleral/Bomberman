@@ -270,10 +270,10 @@ class TestCharacter(CharacterEntity):
         if wrld.exit_at(x, y):
             print("at exit")
             #return 100
-            return dist_to_goal
+            return 100
         
 
-        score = dist_to_goal;
+        score = 100;
         
         # distance from closest monster
         closest_monster = self.find_monster(wrld ,(x,y))
@@ -282,11 +282,11 @@ class TestCharacter(CharacterEntity):
         if closest_monster[1]:
             if closest_monster[1] > 0:
                 #score += 0.53 * ((1 - (1 / closest_monster[1])) * 100)
-                score -= ((0.75 * (dist_to_goal)) * (1 / closest_monster[1]))
+                score -= ((0.65 * (100)) * (1 / closest_monster[1]))
             else: # close to us
                 #dist_importance = dist_importance - (dist_importance * 0.53)
                 dist_importance -= 0.1
-                score -= (0.75 * (dist_to_goal))
+                score -= (0.65 * (100))
         #else: score += 53   #No monster - no contribution (change) to score
         
         bomb_distance = self.nearBomb(x, y, wrld)
@@ -297,42 +297,42 @@ class TestCharacter(CharacterEntity):
             # bomb
             # A bomb can hit us!
             #score += 0.05 * ((1 - (1 / bomb_distance)) * 100)
-            score -= ((0.05 * (dist_to_goal)) * (1 / bomb_distance))
+            score -= ((0.05 * (100)) * (1 / bomb_distance))
         #else: score += 5 # At the bomb position - depends on timer below
             
         #Determine how long till bomb explodes
         if wrld.bomb_at(x,y) is not None and wrld.bomb_at(x,y).timer > 0:
             if wrld.bomb_at(x,y).timer > 2:   # Close to exploding
-                score -= ((0.05 * (dist_to_goal)) * (1 / wrld.bomb_at(x,y).timer))
+                score -= ((0.05 * (100)) * (1 / wrld.bomb_at(x,y).timer))
                 #score += 0.12 * ((1 - (1 / wrld.bomb_at(x,y).timer)) * 100)
             else:
                 #dist_importance -= 0.1
-                score -= (0.15 * (dist_to_goal))
+                score -= (0.05 * (100))
         #else: #No bomb score += 12
         
         # Checking for explosion - avoid going towards it
         if wrld.explosion_at(x, y) is not None:
             score += 0
             #dist_importance -= 0.1
-            score -= (0.10 * (dist_to_goal))
+            score -= (0.15 * (100))
             #dist_importance = dist_importance - (dist_importance * 0.15)
         #else: # No explosion score += 15
         
         # Environment - return the number of empty spaces nearby
         num_empty_cells = self.surrounded(x, y, wrld)
         
-        if num_empty_cells > 7: # Enough spaces to move
-            #score += 15
-            score += 0
-        elif num_empty_cells > 0:   #corners and sides
-            #score += 0.15 * ((1 - (1 / num_empty_cells)) * 100)
-            score -= ((0.05 * (dist_to_goal)) * (1 / num_empty_cells))
+        if num_empty_cells > 0: #corners and sides
+            if num_empty_cells < 5: # Enough spaces to move
+                #score += 0.15 * ((1 - (1 / num_empty_cells)) * 100)
+                score -= ((0.10 * (100)) * (1 / num_empty_cells))
+            else:
+                score -= (0.10 * (100))
         
         # overall_score = (0.30 * dist_to_goal) + (0.70 * score)
         # overall_score = 0.35 * dist_to_goal + (score - (dist_to_goal))
         # overall_score = (dist_importance * dist_to_goal) + ((1 - dist_importance) * score)
         # overall_score = (dist_importance)**2 * abs(dist_importance - score)
-        overall_score = 0.35 * abs(dist_importance - score)
+        overall_score = (dist_to_goal - score) + 0.65 * score + 0.35 * dist_to_goal
         
         print(overall_score, " for position ", action, " with distance to exit ", dist_to_goal, " and score ", score)
         return overall_score
